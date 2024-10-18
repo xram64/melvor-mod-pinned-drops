@@ -1,7 +1,7 @@
 {
-  "name": "melvor-idle-mod-boilerplate-ts",
-  "version": "1.0.0",
-  "description": "",
+  "name": "melvor-mod-pinned-drops",
+  "version": "0.1.0",
+  "description": "Keep drops pinned in the UI while training a skill.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -11,7 +11,7 @@
     "buildzip": "webpack && node scripts/bundleHtml.js && node scripts/zip.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "xram",
   "license": "MIT",
   "devDependencies": {
 		"@types/ifvisible": "^1.1.0",
