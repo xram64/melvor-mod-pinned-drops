@@ -6,7 +6,8 @@ interface NotificationData {
     isError: boolean;
 }
 declare type AnyNotification = GenericNotification | AddItemNotification | RemoveItemNotification | SummoningMarkNotification | ErrorNotification | SuccessNotification | InfoNotification;
-declare type NotificationType = 'AddItem' | 'RemoveItem' | 'AddGP' | 'RemoveGP' | 'AddSlayerCoins' | 'RemoveSlayerCoins' | 'SummoningMark' | 'Error' | 'Success' | 'Info';
+// [MOD] Appended last 5 types to cover all used types (including subclasses).
+declare type NotificationType = 'AddItem' | 'RemoveItem' | 'AddGP' | 'RemoveGP' | 'AddSlayerCoins' | 'RemoveSlayerCoins' | 'SummoningMark' | 'Error' | 'Success' | 'Info' | 'AddCurrency' | 'RemoveCurrency' | 'SkillXP' | 'AbyssalXP' | 'MasteryLevel';
 declare const enum NotificationHorizontalPositions {
     LEFT = 0,
     CENTER = 1,
