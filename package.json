@@ -1,6 +1,6 @@
 {
   "name": "melvor-mod-pinned-drops",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Keep drops pinned in the UI while training a skill.",
   "main": "index.js",
   "scripts": {

@@ -128,3 +128,5 @@ dist
 
 # Other
 package/
+.dev/
+.vscode/
