@@ -16,7 +16,7 @@ To record notifications, we add a [patch](https://wiki.melvoridle.com/w/Mod_Crea
 
 ## Changelog
 
-### v1.0 (10/24/24)
+### v1.0 (TBD)
 - Initial release.
 
 
