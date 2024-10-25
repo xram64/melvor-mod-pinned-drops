@@ -22,7 +22,7 @@ Initially, the mod patched the `NotificationsManager.prototype.addNotification(k
 
 ## Changelog
 
-### v1.0 (10/24/24)
+### v1.0 (TBD)
 - Initial release.
 
 
