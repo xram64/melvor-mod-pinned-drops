@@ -1,8 +1,92 @@
-.mbts__logo-img {
-  width: 100%;
+.pinned-drops {
+  /* Button colors */
+  --btn-bg-light: #edf0f2;
+  --btn-bg-light-hover: #c6ced3;
+  --btn-bg-light-sticky: #939b9f;
+  --btn-bg-dark: #2d3542;
+  --btn-bg-dark-hover: #3f4651;
+  --btn-bg-dark-sticky: #616c7f;
+
+  /* Dimensions */
+  --pd-btn_width: 36px;
+  --pd-panel_min-width: 275px;
 }
 
-/* .pinned-drops {
-  --icon-light: url(blob:https://steam.melvoridle.com/ed3b3f23-c3a6-4a4d-92a6-dd706b6df71b);
-  --icon-dark: url(blob:https://steam.melvoridle.com/622a18a7-06b4-4a52-89ca-53d461e47060);
-} */
+.pinned-drops.btn.topbar {
+  margin-right: 0.25rem;
+  border-color: var(--btn-bg-light);  /* Copied from `.btn-dual` class */
+  transition: none !important;  /* Disable `.btn` transitions */
+}
+
+.pinned-drops.dropdown-menu {
+  /* Copied from inline `header-equipment-dropdown` styles */
+  position: absolute;
+  will-change: transform;
+  top: 0px;
+  left: 0px;
+  transform: translate3d(calc(var(--pd-btn_width) - var(--pd-panel_min-width)), 31px, 0px); /* Transform should be calc(`button width` - `panel min-width`, `button height`, 0)*/
+  /* transform: translate3d(-25px, 31px, 0px); */  /* Alternative position: Snapped to right side */
+
+  /* Custom styles for pinned-drops panel */
+  min-width: var(--pd-panel_min-width);
+  max-width: 365px;
+}
+.pinned-drops.panel-header .dropdown-header {
+  padding-bottom: 0.2rem;
+}
+.pinned-drops.panel-content {
+  padding: 0.1rem 0.75rem !important;
+}
+.pinned-drops.panel-itemlist {
+  list-style: none;
+  padding-left: 0.75rem;
+  font-size: 0.8rem;
+  /* line-height: 1.4; */
+}
+.pinned-drops.panel-item {
+  text-align: left;
+  /* Allow text to grow panel width, up to a limit. */
+  width: max-content;
+  max-width: 350px;
+}
+.pinned-drops.panel-item img {
+  height: 14px;
+  margin: 0.1rem 0.4rem;
+  vertical-align: top;
+}
+
+
+/*|| Light Mode ||*/
+/* Button icons */
+.pinned-drops.btn {
+	width: var(--pd-btn_width);
+	max-height: 32px;  /* Actual button height should be 31.1719, due to styles in `skill-icon-xxs` */
+	background-image: var(--icon-light), linear-gradient(to right, var(--btn-bg-light), var(--btn-bg-light)) !important;
+  background-color: var(--btn-bg-light);
+	background-repeat: no-repeat !important;
+  background-size: 55%;
+  background-position: center;
+}
+.pinned-drops.btn.topbar:hover {  /* Highlight button on hover */
+  background-image: var(--icon-light), linear-gradient(to right, var(--btn-bg-light-hover), var(--btn-bg-light-hover)) !important;
+  background-color: var(--btn-bg-light-hover);
+}
+.pinned-drops.btn.topbar.sticky {  /* Highlight button when panel is sticky (on click) */
+  filter: drop-shadow(0px 1px 3px #00000088);
+  background-image: var(--icon-light), linear-gradient(to right, var(--btn-bg-light-sticky), var(--btn-bg-light-sticky)) !important;
+  background-color: var(--btn-bg-light-sticky);
+}
+
+/*|| Dark Mode ||*/
+.darkMode .pinned-drops.btn {
+	background-image: var(--icon-dark), linear-gradient(to right, var(--btn-bg-dark), var(--btn-bg-dark)) !important;
+  background-color: var(--btn-bg-dark);
+}
+.darkMode .pinned-drops.btn.topbar:hover {  /* Highlight button on hover */
+  background-image: var(--icon-dark), linear-gradient(to right, var(--btn-bg-dark-hover), var(--btn-bg-dark-hover)) !important;
+  background-color: var(--btn-bg-dark-hover);
+}
+.darkMode .pinned-drops.btn.topbar.sticky {  /* Highlight button when panel is sticky (on click) */
+  background-image: var(--icon-dark), linear-gradient(to right, var(--btn-bg-dark-sticky), var(--btn-bg-dark-sticky)) !important;
+  background-color: var(--btn-bg-dark-sticky);
+}

@@ -27,9 +27,9 @@ module.exports = {
   ],
   module: {
     generator: {
-      'asset/resource': {
-        publicPath: 'img/',
-        outputPath: 'img/',
+      'asset/resource': {         // (Emits a separate file and exports the URL)
+        publicPath: 'img/',       // Root folder in the deployed bundle that all asset filepaths will be relative to
+        outputPath: 'img/',       // Relative to `output.path` == `/dist`
         filename: '[name][ext]',
       },
     },

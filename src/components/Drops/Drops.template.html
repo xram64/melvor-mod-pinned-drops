@@ -1,20 +1,17 @@
 <!-- Copied from [HandyDandyNotebook](https://github.com/WesCook/HandyDandyNotebook/blob/main/src/button.mjs) -->
 <template id="pd__T__topbar">
   <div id="pd__topbar-container"
-       class="dropdown d-inline-block">
+       class="pinned-drops dropdown d-inline-block">
 
     <button id="pd__topbar-button"
-            class="pinned-drops topbar btn btn-sm ml-2"
+            class="pinned-drops topbar btn btn-sm m1-2"
             @click="clickButton"
             @mouseenter="mouseEnterButton"
             @mouseleave="mouseLeaveButton"
             aria-haspopup="true"
             title="Pinned Drops">
-
-            <!-- Replace img with `--icon-light/--icon-dark` CSS? (see Notebook mod) -->
-            <img id="pd__topbar-button-image"
-                class="skill-icon-xxs"
-                :src="props.icon">
+      <!-- Insert a transparent 1-pixel image to help match sizing of base game topbar buttons, which are determined by their img tag dimensions -->
+      <img class="skill-icon-xxs" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=">
     </button>
 
   </div>
@@ -23,27 +20,26 @@
 <template id="pd__T__topbar-panel">
   <!-- Copied from Equipment Stats dropdown button on top bar. -->
   <div id="pd__topbar-panel"
-       class="dropdown-menu dropdown-menu-lg dropdown-menu-right p-0 border-0 font-size-sm show"
+       class="pinned-drops topbar dropdown-menu dropdown-menu-lg dropdown-menu-right p-0 border-0 show"
        aria-labelledby="pd__topbar-button"
-       x-placement="bottom-end"
-       style="position: absolute; will-change: transform; top: 0px; left: 0px; transform: translate3d(-264px, 31px, 0px);">
-    <div class="p-2 text-center">
+       x-placement="bottom-end">
+    <div class="pinned-drops panel-header p-1 text-center">
       <h5 class="dropdown-header">
         Pinned Drops
       </h5>
     </div>
-    <div class="block-content block-content-full text-center pt-0">
+    <div class="pinned-drops panel-content text-dark block-content text-center pt-0">
       <div>
-        <ul id="pd__topbar-panel-itemlist"></ul>
+        <ul id="pd__topbar-panel-itemlist" class="pinned-drops panel-itemlist"></ul>
       </div>
     </div>
   </div>
 </template>
 
 <template id="pd__T__topbar-panel-item">
-  <li class="pd__topbar-panel-item" v-for="(count, text) in store.dropCounts" :key="text"
-  style="color: #fff; text-align: left;">
-      {{ count }} {{ text }}
-      <!-- <drops-panel-item></drops-panel-item> -->
+  <li class="pinned-drops topbar panel-item" v-for="(drop, id) in store.dropCounts" :key="id" :drop-type="drop.type">
+    <img :src="drop.icon">
+    <span class="pinned-drops panel-item-qty font-w700 mr-1" :class="`text-${(drop.qty > 0) ? 'success' : 'danger'}`">{{ drop.qtyText }}</span>
+    <span class="pinned-drops panel-item-text">{{ drop.label }}</span>
   </li>
 </template>

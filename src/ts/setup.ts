@@ -1,81 +1,79 @@
 // Modules
-// You can import script modules and have full type completion
-import { Counts, Drops, DropsPanel, DropsPanelItem, DropsProps, MouseEvent, EventCallback } from '../components/Drops/Drops';
+import { ItemCounts, Drops, DropsPanel, DropsPanelItem, DropsProps, NotifTag, MouseEvent, EventCallback } from '../components/Drops/Drops';
 
-// Data
-// Game data for registration
-import ModData from '../data/data.json';  // TODO: ????
-
-// Styles
-// Will automatically load your styles upon loading the mod
+// Styles (relative to this file)
 import '../css/styles.css';
 
-// Images
-// To bundle your mod's icon
+// Images (relative to this file)
 import '../img/icon.png';
-// Reference images using `ctx.getResourceUrl`
-import LargeIcon from '../img/icon_large.png';
+import '../img/pd-icon-dark.png';
+import '../img/pd-icon-light.png';
+
+// Global function references
+declare function numberWithCommas(number: number, ignoreSetting?: boolean): string;  // `assets/js/built/utils.js`
 
 
 /*  [ TODO ]
- *  - Add icon to button, and a second icon (or modify the first) when button is clicked (sticky).
- *  - Properly handle MasteryLevel, SummoningMark, and other notification types properly.
- *    - For MasteryLevel, make sure levels aren't accumulated (since notifications are sent as total current level).
- *  - Expand `dropCounts` to include more info, like icons (make object into a full class?).
- *  - Fix formatting for drops list.
- *    - Embed icons in drops panel list to match ones used by notifications.
- *    - Remove dots from <li> rows.
- *    - Handle +/- signs in front of numbers. (Find npm package?)
- *    - Add commas to large numbers. (Find npm package?)
- *  - Handle order/sorting for drops in panel list.
- *  - Add settings. Include different button/dropdown location options?
- *  - Add functionality to start/stop/reset drop collection.
- *    - Alternatively, add "tabs" to drops panel for different sections.
- *    - An "Overall" section to hold all drops received across a whole session.
- *    - A "Session" section to hold drops received after the player presses a Start button (include buttons at top of tab?).
- *  - Clean up `DropsPanelItem` component/template layout.
- *  - Add CSS styles.
- *  - Move some functions out of `setup.ts`?
- *  - Also keep track of other info like Mastery XP, Mastery Pool XP, removed items (e.g. raw fish while cooking)?
+*  - Add functionality to start/stop/reset drop collection.
+*  - Add a dropdown list (or tabs?) to the drops panel to switch between different sections.
+*    - An "Overall" section to hold all drops received across a whole session.
+*    - A "Session" section to hold drops received after the player presses a Start button (include buttons at top of tab?).
+*      - Add a timer to also keep track of the elapsed time in a session (compute averages/hr?).
+*  - Settings:
+*    - Different button/dropdown location options (similar to HandyDandyNotebook)?
+*    - Toggles for showing/hiding certain drop types in the list.
+*    - Whether to show decimals in combat XP gains (or round).
+*    - Change font size.
+*  - Properly handle MasteryLevel, SummoningMark, and other notification types.
+*    - For MasteryLevel, make sure levels aren't accumulated (since notifications are sent as total current level).
+*  ? Also keep track of other info like gained Levels, Mastery XP, Mastery Pool XP, removed items (e.g. raw fish while cooking)?
+*  - Adjust formatting for drops list.
+*    - Display a faint highlight or border around each line on hover.
+*    ✓ Embed icons in drops panel list to match ones used by notifications.
+*    ✓ Remove dots from <li> rows.
+*    ✓ Add commas to large numbers.
+*    ? Handle +/- signs in front of numbers (use function from `utils.js`)?
+*    ? Add visual groups for drops (Items, XP, Currency, ...)?
+*  - Show a small 'x' button next to each list item on hover which will clear that drop type from the list.
+*  ? Handle order/sorting for drops in panel list?
+*    - Sort options: Default (in first drop order), Alphabetical, By Type, By Amount
+*  ✓ Add icon to button, and a second icon (or modify the first) when button is clicked (sticky).
+*  ✓ Expand `dropCounts` to include more info, like icons (make object into a full class?).
+*  ✓ Refactor `dropCounts` to use a generated unique identifier as the index to each list entry, instead of relying on the `text` field?
+*    ✓ Use some operation like `Fishing Skill XP` -> `fishing-skill-xp`?
 */
 
-
 export async function setup(ctx: Modding.ModContext) {
-  // Register our GameData
-  await ctx.gameData.addPackage(ModData);
-
-  // Because we're loading our templates.min.html file via the manifest.json,
-  // the templates aren't available until after the setup() function runs
+  // Because we're loading our templates.min.html file via the manifest.json, the templates aren't available until after the setup() function runs.
   ctx.onInterfaceReady(() => {
+    // Add styles for button icon.
+    createIconCSS(ctx);
+
     // Create a store to hold running counts for all drops, shared between components.
     const dropStore = ui.createStore({
-      dropCounts: {} as Counts,
+      dropCounts: {} as ItemCounts,
 
-      addDrop(text: string, quantity: number) {
+      addDrop(id: string, label: string, type: NotificationType, icon: string, qty: number) {
         // If this drop type has already been seen, update its value in the map.
-        if (text in this.dropCounts)
-          this.dropCounts[text] += quantity;
+        if (id in this.dropCounts) {
+          this.dropCounts[id].qty += qty;
+          this.dropCounts[id].qtyText = numberWithCommas(this.dropCounts[id].qty)
+        }
         // If this is a new drop type, add an entry to the map.
-        else
-          this.dropCounts[text] = quantity;
+        else {
+          this.dropCounts[id] = { label: label, type: type, icon: icon, qty: qty, qtyText: numberWithCommas(qty) }
+        }
       }
     });
 
-    // Add a button for the mod under the 'Modding' section of the sidebar.
-    sidebar.category('Modding').item('Pinned Drops', {
-      icon: ctx.getResourceUrl('img/icon.png'),
-      onClick() {
-        // TODO: Remove this code from `onClick`/sidebar and only run once, or add cleanup functionality.
+    // Build props to pass down to Drops components.
+    const props: DropsProps = { label: "Pinned Drops", sticky: false };
 
-        // Build props to pass down to Drops components
-        const props: DropsProps = { label: "Pinned Drops", sticky: false }
+    // Create button and panel components and add them to the top bar.
+    placeComponentsInTopbar(buttonCallback, props, dropStore);
 
-        // Create button and panel components and add them to the top bar
-        placeComponentsInTopbar(buttonCallback, props, dropStore);
-
-        captureNotifications(ctx, props, dropStore);
-      },
-    });
+    // Register patch to catch and handle notifications.
+    captureNotifications(ctx, props, dropStore);
 
   });
 }
@@ -87,6 +85,7 @@ function buttonCallback(event: MouseEvent, props: DropsProps, store: any) {
     // Use 'sticky' flag to override mouseover toggles when button has been clicked
     props.sticky = !props.sticky;
     document.getElementById("pd__topbar-panel").classList.toggle('show', props.sticky);
+    document.getElementById("pd__topbar-button").classList.toggle('sticky', props.sticky);
   }
 
   else if (event === MouseEvent.MOUSEENTER) {
@@ -131,28 +130,115 @@ function placeComponentsInTopbar(callback: EventCallback, props: DropsProps, dro
 }
 
 function captureNotifications(ctx: Modding.ModContext, props: DropsProps, dropStore: any) {
-
-  // Only patch if we haven't already
-  if (!ctx.isPatched(NotificationsManager, "addNotification")) {
-
-    // `this.activeNotifications` contains a list of all notifications currently being displayed on the screen.
-
     // Values for `key.type` are defined in `NotificationType` (`src\ts\types\gameTypes\notifications.d.ts`) as a base,
     //  and extended by classes in `/assets/js/built/notifications.js`:
     const keyTypesAll = ['AddItem', 'RemoveItem', 'AddGP', 'RemoveGP', 'AddSlayerCoins', 'RemoveSlayerCoins', 'SummoningMark', 'Error', 'Success', 'Info', 'AddCurrency', 'RemoveCurrency', 'SkillXP', 'AbyssalXP', 'MasteryLevel'];
     const keyTypesSkills = ['AddItem', 'AddGP', 'AddSlayerCoins', 'SummoningMark', 'Error', 'Success', 'Info', 'AddCurrency', 'SkillXP', 'AbyssalXP', 'MasteryLevel'];
 
     ctx.patch(NotificationsManager, "addNotification").after(
-      function(_, key, notification) {
-        
-        // HACK: Ignore `MasteryLevel` and other notifications until they're handled properly:
-        if (key.type in ['MasteryLevel', 'Error', 'Success', 'Info'])
+      // Note: `this.activeNotifications` contains a list of all notifications currently being displayed on the screen.
+
+      // This patch function receives the return value `_` (void for this function), and the `key` and `notification` args of any call to `addNotification`.
+      function(_, key, notification) {  // `addNotification(key, notification) -> _`
+
+        // ==== TEST ====
+        if (['MasteryLevel', 'AddGP', 'RemoveGP', 'AddSlayerCoins', 'RemoveSlayerCoins', 'AddCurrency', 'RemoveCurrency', 'SummoningMark', 'Error', 'Success', 'Info'].includes(key.type)) {
+          console.log(key);
+          console.log(notification);
+        }
+
+        // Create a unique identifier that will keep track of this drop type in the list.
+        let notifId = '';
+        // Some notifications don't populate the `notification.text` field, so process the notification types to determine a final label.
+        let notifLabel = '';
+
+        // Handle GP
+        if (['AddGP', 'RemoveGP'].includes(key.type)) {
+          notifId = `${NotifTag.CURRENCY}:gp`;
+          notifLabel = 'GP';
+        }
+        // Handle SC
+        else if (['AddSlayerCoins', 'RemoveSlayerCoins'].includes(key.type)) {
+          notifId = `${NotifTag.CURRENCY}:sc`;
+          notifLabel = 'SC';
+        }
+        // Handle other currencies (AC, ASC, RC)
+        else if (['AddCurrency', 'RemoveCurrency'].includes(key.type)) {
+          // Since other currencies don't provide a `notification.text` or any other identification, infer the currency type from the `media` URI.
+          const mediaName = notification.media.match(/main\/([\w]+)\.png/)[1];  // e.g. `https://[URL]/assets/media/main/abyssal_pieces.png`
+          switch (mediaName) {
+            case 'abyssal_pieces':
+              notifId = `${NotifTag.CURRENCY}:ap`;
+              notifLabel = 'AP';
+            case 'abyssal_slayer_coins':
+              notifId = `${NotifTag.CURRENCY}:asc`;
+              notifLabel = 'ASC';
+            case 'raid_coins':
+              notifId = `${NotifTag.CURRENCY}:rc`;
+              notifLabel = 'RC';
+            default:
+              notifId = `${NotifTag.CURRENCY}:unknown`;
+              notifLabel = '';
+              console.error(`[Pinned Drops] Currency type '${mediaName}' not recognized, from path '${notification.media}'.`);
+          }
+        }
+        // Handle Mastery Levels
+        else if (key.type == 'MasteryLevel') {
+          // TODO: `notification.quantity` gives the total current mastery level, so it cannot be accumulated the same way as other drops.
+          //       This will need to be changed in the `addDrop` definition if mastery level gains are included in the drop list.
+          // HACK: Ignore for now.
           return;
+        }
+        // Handle info messages
+        else if (['Error', 'Success', 'Info'].includes(key.type)) {
+          // HACK: Ignore for now.
+          return;
+        }
+        // Handle all other drop types ('AddItem', 'RemoveItem', 'SkillXP', 'AbyssalXP', 'SummoningMark')
+        else {
+          // Determine the correct tag for this notification type.
+          let tag = NotifTag.UNKNOWN;
+          if (['AddItem', 'RemoveItem'].includes(key.type)) tag = NotifTag.ITEM;
+          else if (['SkillXP', 'AbyssalXP'].includes(key.type)) tag = NotifTag.SKILL;
+          else if (['SummoningMark'].includes(key.type)) tag = NotifTag.MARK;
+          
+          notifLabel = notification.text;
+          notifId = `${tag}:${formatUniqueId(notifLabel)}`;
+        }
         
         // Whenever a new drop notification is triggered, capture it in the store.
-        dropStore.addDrop(notification.text, notification.quantity);
+        dropStore.addDrop(notifId, notifLabel, key.type, notification.media, notification.quantity);
       });
+}
 
-  }
+function formatUniqueId(label: string): string {
+  // Format notification text strings into unique IDs.
+  let id;
 
+  id = label.toLowerCase()              // Convert to lowercase
+            .replace(/\s/g, '-')        // Replace all spaces with dashes
+            .replace(/[^\w\s-]/g, '');  // Remove any symbols (`+`, `!`, `.`, `()`)
+
+
+  /* TODO: Possible formatting for `SummoningMark`s?
+  id = label.toLowerCase()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/\d/g, '')
+            .trim()
+            .replace(/\s/g, '-');
+  */
+
+  return id;
+}
+
+// Adapted from [HandyDandyNotebook](https://github.com/WesCook/HandyDandyNotebook/blob/main/src/button.mjs)
+function createIconCSS(ctx: Modding.ModContext) {
+  // Create styles pointing to icon URLs, which are applied to the button in `styles.css`.
+	document.head.insertAdjacentHTML("beforeend",
+	`<style>
+	.pinned-drops {
+		--icon-light: url("${ctx.getResourceUrl("img/pd-icon-light.png")}");
+		--icon-dark: url("${ctx.getResourceUrl("img/pd-icon-dark.png")}");
+	}
+	</style>`);
 }
