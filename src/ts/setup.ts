@@ -1,5 +1,5 @@
 // Modules
-import { ItemCounts, Drops, DropsPanel, DropsPanelItem, DropsProps, NotifTag, MouseEvent, EventCallback } from '../components/Drops/Drops';
+import { ItemCounts, Drops, DropsPanel, DropsPanelItem, DropsProps, NotifTag } from '../components/Drops/Drops';
 
 // Styles (relative to this file)
 import '../css/styles.css';
@@ -12,36 +12,48 @@ import '../img/pd-icon-light.png';
 // Global function references
 declare function numberWithCommas(number: number, ignoreSetting?: boolean): string;  // `assets/js/built/utils.js`
 
-
 /*  [ TODO ]
-*  - Add functionality to start/stop/reset drop collection.
-*  - Add a dropdown list (or tabs?) to the drops panel to switch between different sections.
-*    - An "Overall" section to hold all drops received across a whole session.
-*    - A "Session" section to hold drops received after the player presses a Start button (include buttons at top of tab?).
-*      - Add a timer to also keep track of the elapsed time in a session (compute averages/hr?).
-*  - Settings:
-*    - Different button/dropdown location options (similar to HandyDandyNotebook)?
-*    - Toggles for showing/hiding certain drop types in the list.
-*    - Whether to show decimals in combat XP gains (or round).
-*    - Change font size.
-*  - Properly handle MasteryLevel, SummoningMark, and other notification types.
-*    - For MasteryLevel, make sure levels aren't accumulated (since notifications are sent as total current level).
-*  ? Also keep track of other info like gained Levels, Mastery XP, Mastery Pool XP, removed items (e.g. raw fish while cooking)?
-*  - Adjust formatting for drops list.
-*    - Display a faint highlight or border around each line on hover.
-*    ✓ Embed icons in drops panel list to match ones used by notifications.
-*    ✓ Remove dots from <li> rows.
-*    ✓ Add commas to large numbers.
-*    ? Handle +/- signs in front of numbers (use function from `utils.js`)?
-*    ? Add visual groups for drops (Items, XP, Currency, ...)?
-*  - Show a small 'x' button next to each list item on hover which will clear that drop type from the list.
-*  ? Handle order/sorting for drops in panel list?
-*    - Sort options: Default (in first drop order), Alphabetical, By Type, By Amount
-*  ✓ Add icon to button, and a second icon (or modify the first) when button is clicked (sticky).
-*  ✓ Expand `dropCounts` to include more info, like icons (make object into a full class?).
-*  ✓ Refactor `dropCounts` to use a generated unique identifier as the index to each list entry, instead of relying on the `text` field?
-*    ✓ Use some operation like `Fishing Skill XP` -> `fishing-skill-xp`?
-*/
+ *  - Add a dropdown list (or tabs?) to the drops panel to switch between different sections.
+ *    - Use Firemaking log selection dropdown classes: Add `dropdown-item pointer-enabled` to dropdown items.
+ *    - An "Overall" section to hold all drops received across a whole session.
+ *    - A "Session" section to hold drops received after the player presses a Start button (include buttons at top of tab?).
+ *      - Add a timer to also keep track of the elapsed time in a session (compute averages/hr?).
+ *  - Add functionality to start/stop/reset drop collection.
+ *  - Settings:
+ *    - Different button/dropdown location options (similar to HandyDandyNotebook)?
+ *    - Toggles for showing/hiding certain drop types in the list.
+ *    - Whether to show decimals in combat XP gains (or round).
+ *    - Change font size.
+ *  - Properly handle MasteryLevel, SummoningMark, and other notification types.
+ *    - For MasteryLevel, make sure levels aren't accumulated (since notifications are sent as total current level).
+ *  ? Also keep track of other info like gained Levels, Mastery XP, Mastery Pool XP, removed items (e.g. raw fish while cooking)?
+ *  - Also keep track of actions done, like number of successful Thieving attempts (add setting to enable?)?
+ *  - Adjust formatting for drops list.
+ *    - Put `overflow-y-auto` class and `max-height: 60vh;` style on panel div to limit its size.
+ *    ? Change z-index of panel?
+ *    - Display a faint highlight or border around each line on hover.
+ *    ✓ Embed icons in drops panel list to match ones used by notifications.
+ *    ✓ Remove dots from <li> rows.
+ *    ✓ Add commas to large numbers.
+ *    ? Handle +/- signs in front of numbers (use function from `utils.js`)?
+ *    ? Add visual groups for drops (Items, XP, Currency, ...)?
+ *  - Show a small 'x' button next to each list item on hover which will clear that drop type from the list.
+ *  - Make a `dev` branch and start pushing updates there.
+ *  - Test with "Legacy Notifications" or note incompatibility in description.
+ *  ? Replace `mouseenter`-type events with `pointerenter`-type events?
+ *  ? Handle order/sorting for drops in panel list?
+ *    - Sort options: Default (in first drop order), Alphabetical, By Type, By Amount
+ *  ✓ Add icon to button, and a second icon (or modify the first) when button is clicked (sticky).
+ *  ✓ Expand `dropCounts` to include more info, like icons (make object into a full class?).
+ *  ✓ Refactor `dropCounts` to use a generated unique identifier as the index to each list entry, instead of relying on the `text` field?
+ *    ✓ Use some operation like `Fishing Skill XP` -> `fishing-skill-xp`?
+ */
+
+/*  [ ISSUES ]
+ *  - When too many notifications happen at once (e.g. when collecting a large buffer of combat loot), some of them are not displayed,
+ *    and it seems that `addNotification` is also not fired for these, causing the mod to miss drops.
+ */
+
 
 export async function setup(ctx: Modding.ModContext) {
   // Because we're loading our templates.min.html file via the manifest.json, the templates aren't available until after the setup() function runs.
@@ -63,14 +75,20 @@ export async function setup(ctx: Modding.ModContext) {
         else {
           this.dropCounts[id] = { label: label, type: type, icon: icon, qty: qty, qtyText: numberWithCommas(qty) }
         }
-      }
+      },
+
+      clearAllDrops() {
+        delete this.dropCounts;
+        this.dropCounts = {} as ItemCounts;
+      },
+
     });
 
     // Build props to pass down to Drops components.
     const props: DropsProps = { label: "Pinned Drops", sticky: false };
 
     // Create button and panel components and add them to the top bar.
-    placeComponentsInTopbar(buttonCallback, props, dropStore);
+    placeComponentsInTopbar(props, dropStore);
 
     // Register patch to catch and handle notifications.
     captureNotifications(ctx, props, dropStore);
@@ -79,34 +97,57 @@ export async function setup(ctx: Modding.ModContext) {
 }
 
 
-// Callback function to handle results of click and mouseover events on the mod button.
-function buttonCallback(event: MouseEvent, props: DropsProps, store: any) {
-  if (event === MouseEvent.CLICK) {
+// Callback function to handle click and mouseover events on the pin button.
+function callbackTopbarPinButton(eventType: string, action: string, props: DropsProps, store: any) {
+  if (eventType === 'click') {
     // Use 'sticky' flag to override mouseover toggles when button has been clicked
     props.sticky = !props.sticky;
     document.getElementById("pd__topbar-panel").classList.toggle('show', props.sticky);
     document.getElementById("pd__topbar-button").classList.toggle('sticky', props.sticky);
   }
 
-  else if (event === MouseEvent.MOUSEENTER) {
+  else if (eventType === 'mouseenter') {
     // Show drops panel (if 'sticky' flag is not set)
     if (!props.sticky)
       document.getElementById("pd__topbar-panel").classList.toggle('show', true);
   }
 
-  else if (event === MouseEvent.MOUSELEAVE) {
+  else if (eventType === 'mouseleave') {
     // Hide drops panel (if 'sticky' flag is not set)
     if (!props.sticky)
       document.getElementById("pd__topbar-panel").classList.toggle('show', false);
   }
 }
 
+// Callback function to handle clicks on panel buttons.
+function callbackPanelButtons(eventType: string, action: string, props: DropsProps, store: any) {
+
+  const actionMap = new Map([['start', 2], ['stop', 4], ['reset', 6]]);
+
+  // TEST
+  if (eventType === 'click') {
+    switch (action) {
+      case 'start':
+        console.log('start');
+        break;
+      case 'stop':
+        console.log('stop');
+        break;
+      case 'reset':
+        store.clearAllDrops();
+        break;
+      default:
+        console.log('ERROR');
+    }
+  }
+}
+
 // Adapted from [HandyDandyNotebook](https://github.com/WesCook/HandyDandyNotebook/blob/main/src/button.mjs)
-function placeComponentsInTopbar(callback: EventCallback, props: DropsProps, dropStore: any) {
+function placeComponentsInTopbar(props: DropsProps, dropStore: any) {
 
   /* | Button | */
 	// Create mod button
-	ui.create(Drops("#pd__T__topbar", props, dropStore, callback), document.body);
+	ui.create(Drops("#pd__T__topbar", props, dropStore, callbackTopbarPinButton), document.body);
 	const pinnedDropsDiv = document.getElementById("pd__topbar-container");
 	const pinnedDropsButton = document.getElementById("pd__topbar-button");
   
@@ -117,7 +158,7 @@ function placeComponentsInTopbar(callback: EventCallback, props: DropsProps, dro
   
   /* | Panel | */
   // Create drops panel (will not show until activated by mod button)
-  ui.create(DropsPanel("#pd__T__topbar-panel", props), document.body);
+  ui.create(DropsPanel("#pd__T__topbar-panel", props, dropStore, callbackPanelButtons), document.body);
 	const pinnedDropsPanel = document.getElementById("pd__topbar-panel");
   pinnedDropsPanel.classList.toggle('show', false);  // Make sure `show` is initially off for panel
 
@@ -143,8 +184,8 @@ function captureNotifications(ctx: Modding.ModContext, props: DropsProps, dropSt
 
         // ==== TEST ====
         if (['MasteryLevel', 'AddGP', 'RemoveGP', 'AddSlayerCoins', 'RemoveSlayerCoins', 'AddCurrency', 'RemoveCurrency', 'SummoningMark', 'Error', 'Success', 'Info'].includes(key.type)) {
-          console.log(key);
-          console.log(notification);
+          // console.log(key);
+          // console.log(notification);
         }
 
         // Create a unique identifier that will keep track of this drop type in the list.
@@ -170,12 +211,15 @@ function captureNotifications(ctx: Modding.ModContext, props: DropsProps, dropSt
             case 'abyssal_pieces':
               notifId = `${NotifTag.CURRENCY}:ap`;
               notifLabel = 'AP';
+              break;
             case 'abyssal_slayer_coins':
               notifId = `${NotifTag.CURRENCY}:asc`;
               notifLabel = 'ASC';
+              break;
             case 'raid_coins':
               notifId = `${NotifTag.CURRENCY}:rc`;
               notifLabel = 'RC';
+              break;
             default:
               notifId = `${NotifTag.CURRENCY}:unknown`;
               notifLabel = '';

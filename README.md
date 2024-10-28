@@ -5,13 +5,19 @@ Keeps track of drop notifications in a persistent list to easily calculate total
 
 See exactly how much gold you collected during an hour of Thieving, or how many gems dropped over a session of Mining.
 
+### Interface
+...
+
 
 ## Design
-To record notifications, we add a [patch](https://wiki.melvoridle.com/w/Mod_Creation/Mod_Context_API_Reference#patch(className:_class,_methodOrPropertyName:_string):_MethodPatch_%7C_PropertyPatch) to the `addNotification()` function.
+To record notifications, we add a [patch](https://wiki.melvoridle.com/w/Mod_Creation/Mod_Context_API_Reference#patch(className:_class,_methodOrPropertyName:_string):_MethodPatch_%7C_PropertyPatch) to the `NotificationQueue.add()` function.
 
-**`NotificationsManager.prototype.addNotification(key, notification)`:**
-- `key` is an object representing the type of notification that was sent and containing info about the action or event the notification originated from.
-- `notification` is a small dictionary that holds the text, quantity, and media URI needed to render the actual notification popup.
+**`NotificationQueue.add(notification)`:**
+- `notification: QueuedNotify` is a small dictionary that holds the text, quantity, and media URI needed to render the actual notification popup.
+
+
+Initially, the mod patched the `NotificationsManager.prototype.addNotification(key, notification)` method, which is where notification data is sent immediately before being displayed. But this leads to an issue where some notifications could be missed when several different types of notifications are all fired at once (i.e. when collecting a full buffer of Master Farmer loot), due to the limit set by `NotificationQueue.maxNotifications` (20 by default).
+
 
 
 ## Changelog

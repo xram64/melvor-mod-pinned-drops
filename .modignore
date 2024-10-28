@@ -1,0 +1,12 @@
+.git
+.gitignore
+.dev
+.vscode
+node_modules
+scripts
+src
+package.json
+package-lock.json
+tsconfig.json
+webpack.config.js
+README.md

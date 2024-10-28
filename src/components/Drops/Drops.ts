@@ -12,13 +12,11 @@ export declare const enum NotifTag {
   UNKNOWN = 'x',
 }
 
-export declare const enum MouseEvent {
-  CLICK = 0,
-  MOUSEENTER = 1,
-  MOUSELEAVE = 2,
-}
-export type EventCallback = {
-  (event: MouseEvent, props: DropsProps, store: any): void;
+export type MouseEventHandler = {
+  (event: PointerEvent|MouseEvent, action?: string): void;
+};
+export type MouseEventCallback = {
+  (eventType: string, action: string, props: DropsProps, store: any): void;
 };
 
 interface Item {
@@ -40,13 +38,15 @@ export interface DropsProps {
 interface Drops {
   props: DropsProps;
   store: any;
-  clickButton: EventCallback;
-  mouseEnterButton: EventCallback;
-  mouseLeaveButton: EventCallback;
+  clickTopbarPinButton: MouseEventHandler;
+  mouseEnterTopbarPinButton: MouseEventHandler;
+  mouseLeaveTopbarPinButton: MouseEventHandler;
 }
 
 interface DropsPanel{
   props: DropsProps;
+  store: any;
+  clickPanelHeaderButton: MouseEventHandler;
 }
 
 interface DropsPanelItem{
@@ -54,38 +54,45 @@ interface DropsPanelItem{
   store: any;
 }
 
-export function Drops(template: string, props: DropsProps, store: any, callback: EventCallback): Component<Drops> {
+export function Drops(template: string, props: DropsProps, store: any, callback: MouseEventCallback): Component<Drops> {
   return {
     $template: template,
     props,
     store,
 
-    // Handle clicks for mod button
-    clickButton() {
+    // Handle clicks for pin button
+    clickTopbarPinButton(event, action) {
       // Remove focus from button for visuals
-      document.getElementById("pd__topbar-button").blur();
+      // document.getElementById("pd__topbar-button").blur();
 
       // Run callback
-      callback(MouseEvent.CLICK, props, store);
+      callback(event.type, action, props, store);
     },
 
-    // Handle mouseenters for mod button
-    mouseEnterButton() {
+    // Handle mouseenters for pin button
+    mouseEnterTopbarPinButton(event, action) {
       // Run callback
-      callback(MouseEvent.MOUSEENTER, props, store);
+      callback(event.type, action, props, store);
     },
-    // Handle mouseleaves for mod button
-    mouseLeaveButton() {
+    // Handle mouseleaves for pin button
+    mouseLeaveTopbarPinButton(event, action) {
       // Run callback
-      callback(MouseEvent.MOUSELEAVE, props, store);
+      callback(event.type, action, props, store);
     },
   };
 }
 
-export function DropsPanel(template: string, props: DropsProps): Component<DropsPanel> {
+export function DropsPanel(template: string, props: DropsProps, store: any, callback: MouseEventCallback): Component<DropsPanel> {
   return {
     $template: template,
     props,
+    store,
+
+    // Handle clicks for panel button
+    clickPanelHeaderButton(event, action) {
+      // Run callback
+      callback(event.type, action, props, store);
+    },
   }
 }
 

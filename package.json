@@ -1,6 +1,6 @@
 {
   "name": "melvor-mod-pinned-drops",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Keeps track of drops received while training skills.",
   "main": "index.js",
   "scripts": {

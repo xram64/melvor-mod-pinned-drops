@@ -1,13 +1,14 @@
-<!-- Copied from [HandyDandyNotebook](https://github.com/WesCook/HandyDandyNotebook/blob/main/src/button.mjs) -->
+<!-- ||[  Top Bar Container & Button  ]|| -->
 <template id="pd__T__topbar">
+  <!-- Adapted from [HandyDandyNotebook](https://github.com/WesCook/HandyDandyNotebook/blob/main/src/button.mjs) -->
   <div id="pd__topbar-container"
-       class="pinned-drops dropdown d-inline-block">
+       class="pinned-drops dropdown d-inline-block ml-2">
 
     <button id="pd__topbar-button"
-            class="pinned-drops topbar btn btn-sm m1-2"
-            @click="clickButton"
-            @mouseenter="mouseEnterButton"
-            @mouseleave="mouseLeaveButton"
+            class="pinned-drops pinned-drops-pinbutton topbar btn btn-sm"
+            @click="clickTopbarPinButton(event, 'show_panel_sticky')"
+            @mouseenter="mouseEnterTopbarPinButton(event, 'show_panel')"
+            @mouseleave="mouseLeaveTopbarPinButton(event, 'hide_panel')"
             aria-haspopup="true"
             title="Pinned Drops">
       <!-- Insert a transparent 1-pixel image to help match sizing of base game topbar buttons, which are determined by their img tag dimensions -->
@@ -17,16 +18,42 @@
   </div>
 </template>
 
+<!-- ||[  Top Bar Panel  ]|| -->
 <template id="pd__T__topbar-panel">
   <!-- Copied from Equipment Stats dropdown button on top bar. -->
   <div id="pd__topbar-panel"
-       class="pinned-drops topbar dropdown-menu dropdown-menu-lg dropdown-menu-right p-0 border-0 show"
+       class="pinned-drops topbar dropdown-menu dropdown-menu-lg dropdown-menu-right p-0 border-0 overflow-y-auto show"
        aria-labelledby="pd__topbar-button"
        x-placement="bottom-end">
     <div class="pinned-drops panel-header p-1 text-center">
-      <h5 class="dropdown-header">
+      <div class="pinned-drops panel-header-buttons dropdown-header">
+
+        <button id="pd__panel-header-button-start"
+                class="pinned-drops panel-header-button topbar btn btn-sm btn-light text-dark"
+                @click="clickPanelHeaderButton(event, 'start')"
+                aria-haspopup="true"
+                title="Start">
+        Start
+        </button>
+        <button id="pd__panel-header-button-stop"
+                class="pinned-drops panel-header-button topbar btn btn-sm btn-light text-dark"
+                @click="clickPanelHeaderButton(event, 'stop')"
+                aria-haspopup="true"
+                title="Stop">
+        Stop
+        </button>
+        <button id="pd__panel-header-button-reset"
+                class="pinned-drops panel-header-button topbar btn btn-sm btn-light text-dark"
+                @click="clickPanelHeaderButton(event, 'reset')"
+                aria-haspopup="true"
+                title="Reset">
+        Reset
+        </button>
+
+      </div>
+      <!-- <h5 class="dropdown-header">
         Pinned Drops
-      </h5>
+      </h5> -->
     </div>
     <div class="pinned-drops panel-content text-dark block-content text-center pt-0">
       <div>
@@ -36,10 +63,27 @@
   </div>
 </template>
 
+<!-- ||[  Top Bar Panel - Item  ]|| -->
 <template id="pd__T__topbar-panel-item">
   <li class="pinned-drops topbar panel-item" v-for="(drop, id) in store.dropCounts" :key="id" :drop-type="drop.type">
     <img :src="drop.icon">
     <span class="pinned-drops panel-item-qty font-w700 mr-1" :class="`text-${(drop.qty > 0) ? 'success' : 'danger'}`">{{ drop.qtyText }}</span>
     <span class="pinned-drops panel-item-text">{{ drop.label }}</span>
   </li>
+</template>
+
+<!-- ||[  Top Bar Panel - Dropdown List  ]|| -->
+<template id="pd__T__topbar-panel-dropdown">
+  <!-- Copied from Firemaking "Select your logs" dropdown menu -->
+  <div class="pinned-drops panel-dropdown dropdown text-center">
+    <button type="button" id="pd__topbar-panel-dropdown-button" class="btn btn-light dropdown-toggle" aria-haspopup="true" aria-expanded="false">
+      <span id="pd__topbar-panel-dropdown-active">Since Login</span>
+    </button>
+    <div class="pinned-drops panel-dropdown dropdown-menu font-size-sm overflow-y-auto" aria-labelledby="pd__topbar-panel-dropdown-button">
+      <a class="dropdown-item pointer-enabled" opt="since_login"><span>Since Login</span></a>
+      <a class="dropdown-item pointer-enabled" opt="session"><span>Session</span></a>
+      <a class="dropdown-item pointer-enabled" opt="skill"><span>Skill</span></a>
+      <a class="dropdown-item pointer-enabled" opt="window"><span>Window</span></a>
+    </div>
+  </div>
 </template>
