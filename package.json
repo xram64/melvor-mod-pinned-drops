@@ -1,6 +1,6 @@
 {
   "name": "melvor-mod-pinned-drops",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Keeps track of drops received while training skills.",
   "main": "index.js",
   "scripts": {
@@ -13,6 +13,10 @@
   "keywords": [],
   "author": "xram",
   "license": "MIT",
+  "repository": {
+  "type" : "git",
+  "url" : "https://github.com/xram64/melvor-mod-pinned-drops.git"
+  },
   "devDependencies": {
 		"@types/ifvisible": "^1.1.0",
 		"@types/ion-rangeslider": "^2.3.2",

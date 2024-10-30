@@ -110,6 +110,11 @@ declare function currencyNotify(type: string, amount: number): void;
 /** Queues a modal notifying the player of a mastery level up for the specified skill and masteryID */
 declare function notifyMasteryLevelUp(action: MasteryAction, newLevel: number): void;
 declare function notify99ItemMastery(action: MasteryAction): void;
+// [MOD] Add missing functions used by `NotificationQueue` in `utils.js`
+declare function skillXPNotify(skill: AnySkill, quantity: number): void;
+declare function abyssalXPNotify(skill: AnySkill, quantity: number): void;
+declare function abyssalLevelUpNotify(skill: AnySkill): void;
+
 declare function notifyCompletionYay(): void;
 declare function notifyCompletionTotH(): void;
 declare function notifyCompletionEverything(): void;
@@ -146,7 +151,8 @@ declare class ExperienceCalculator {
 }
 /** Calculator for experience and levels */
 declare const exp: ExperienceCalculator;
-declare type QueuedNotify = ItemNotify | StunNotify | BankFullNotify | LevelUpNotify | PlayerNotify | ItemChargeNotify | MasteryNotify | Mastery99Notify | PreserveNotify | CurrencyNotify | TutorialNotify;
+// [MOD] Appended last 3 types to cover all types used in `utils.js`.
+declare type QueuedNotify = ItemNotify | StunNotify | BankFullNotify | LevelUpNotify | PlayerNotify | ItemChargeNotify | MasteryNotify | Mastery99Notify | PreserveNotify | CurrencyNotify | TutorialNotify | SkillXPNotify | AbyssalXPNotify | AbyssalLevelUp;
 declare type ItemNotify = {
     type: 'Item';
     args: Parameters<typeof itemNotify>;
@@ -190,6 +196,20 @@ declare type CurrencyNotify = {
 declare type TutorialNotify = {
     type: 'TutorialTask';
 };
+// [MOD] Appended last 3 types to cover all types used in `utils.js`.
+declare type SkillXPNotify = {
+    type: 'SkillXP';
+    args: Parameters<typeof skillXPNotify>;
+};
+declare type AbyssalXPNotify = {
+    type: 'AbyssalXP';
+    args: Parameters<typeof abyssalXPNotify>;
+};
+declare type AbyssalLevelUp = {
+    type: 'AbyssalLevelUp';
+    args: Parameters<typeof abyssalLevelUpNotify>;
+};
+
 declare function getItemBaseStatsBreakdown(item: EquipmentItem): string;
 declare function lockedSkillAlert(skill: AnySkill, messageTemplate: string): void;
 declare function showStunnedNotification(): void;

@@ -48,6 +48,22 @@
   - Classes like `Player` (`player.js`) and `Skill` (`skill.js`) receive `game` and `manager` objects as arguments, which contain references to the `NotificationQueue` instance, in `game.combat.notifications` and `manager.notifications`.
     - `NotificationQueue.add()` is only called by functions in these classes. This seems to be the original source of all notifications.
     - Hooking `NotificationQueue.add()` may also give more information on the notification's source that can be used to filter out certain types (e.g. equip/unequip items).
+    - The `add()` function fires for every item collected from combat loot, but summing each item's quantity will give the correct total.
+    - All `SkillXP` events added to the queue have quantities provided in exact decimal form, not rounded as they are when they reach `addNotification()`.
+    - Example `Player` events:
+      - `{type: 'Player', args: [<Crafting>, "You don't have the required materials to Craft that.", "danger"]}`
+
+## `NotificationQueue.add(notification)`
+### `notification`
+- The `notification` argument contains an object of type `QueuedNotify` with two fields: `{type: string, args: Array(2)}`.
+  - `type`: A string indicating the type of event (e.g. `SkillXP`, `Item`, `Currency`, `Preserve`).
+  - `args`: A 2-element array.
+    - `args[0]`: An object holding more detailed info about the event (e.g. `Cooking`, `FoodItem`, `GP`, `Summoning`).
+    - `args[1]`: A number containing the quantity (in most cases) or a message (for `Info`/`Success`/`Error` notifications).
+- One type of notification, `TutorialNotify`, is missing the `args` field and only has a `type`.
+- The pair (`notification.type`, `notification.args[0]['localID']`) seems to be unique for each differentiable notification type.
+- For some event types (like `Player`), `args` can contain up to 4 elements.
+
 
 
 
@@ -92,7 +108,6 @@ class NotificationQueue {
     }
 }
 ```
-
 
 
 

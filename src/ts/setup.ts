@@ -1,5 +1,5 @@
 // Modules
-import { ItemCounts, Drops, DropsPanel, DropsPanelItem, DropsProps, NotifTag } from '../components/Drops/Drops';
+import { Notif, NotifCounts, Drops, DropsPanel, DropsPanelItem, DropsProps } from '../components/Drops/Drops';
 
 // Styles (relative to this file)
 import '../css/styles.css';
@@ -10,7 +10,13 @@ import '../img/pd-icon-dark.png';
 import '../img/pd-icon-light.png';
 
 // Global function references
-declare function numberWithCommas(number: number, ignoreSetting?: boolean): string;  // `assets/js/built/utils.js`
+declare function numberWithCommas(number: number, ignoreSetting?: boolean): string;  // From `assets/js/built/utils.js`
+declare function cdnMedia(baseURI: string): string;  // From `assets/js/built/assets.js` (equivalent to `assets.getURI()`)
+
+// Game asset paths
+const icon_MasteryLevel = "assets/media/main/mastery_header.png";
+
+/* *********************************************************************************************************************************************** */
 
 /*  [ TODO ]
  *  - Add a dropdown list (or tabs?) to the drops panel to switch between different sections.
@@ -22,70 +28,88 @@ declare function numberWithCommas(number: number, ignoreSetting?: boolean): stri
  *  - Settings:
  *    - Different button/dropdown location options (similar to HandyDandyNotebook)?
  *    - Toggles for showing/hiding certain drop types in the list.
+ *    - List sorting options: "By Order Received", "By Category", "By Value", "Alphabetical".
  *    - Whether to show decimals in combat XP gains (or round).
  *    - Change font size.
- *  - Properly handle MasteryLevel, SummoningMark, and other notification types.
- *    - For MasteryLevel, make sure levels aren't accumulated (since notifications are sent as total current level).
- *  ? Also keep track of other info like gained Levels, Mastery XP, Mastery Pool XP, removed items (e.g. raw fish while cooking)?
- *  - Also keep track of actions done, like number of successful Thieving attempts (add setting to enable?)?
  *  - Adjust formatting for drops list.
- *    - Put `overflow-y-auto` class and `max-height: 60vh;` style on panel div to limit its size.
- *    ? Change z-index of panel?
  *    - Display a faint highlight or border around each line on hover.
+ *    ? Add visual grouping for drops (Items, XP, Currency, ...)?
+ *    ? Change z-index of panel?
+ *    ✓ Put `overflow-y-auto` class and `max-height: 60vh;` style on panel div to limit its size.
  *    ✓ Embed icons in drops panel list to match ones used by notifications.
  *    ✓ Remove dots from <li> rows.
  *    ✓ Add commas to large numbers.
- *    ? Handle +/- signs in front of numbers (use function from `utils.js`)?
- *    ? Add visual groups for drops (Items, XP, Currency, ...)?
  *  - Show a small 'x' button next to each list item on hover which will clear that drop type from the list.
- *  - Make a `dev` branch and start pushing updates there.
  *  - Test with "Legacy Notifications" or note incompatibility in description.
+ *  ? Also keep track of actions done, like number of successful Thieving attempts (add setting to enable?)?
  *  ? Replace `mouseenter`-type events with `pointerenter`-type events?
- *  ? Handle order/sorting for drops in panel list?
- *    - Sort options: Default (in first drop order), Alphabetical, By Type, By Amount
+ *  ✓ Make a `dev` branch and start pushing updates there.
  *  ✓ Add icon to button, and a second icon (or modify the first) when button is clicked (sticky).
  *  ✓ Expand `dropCounts` to include more info, like icons (make object into a full class?).
  *  ✓ Refactor `dropCounts` to use a generated unique identifier as the index to each list entry, instead of relying on the `text` field?
  *    ✓ Use some operation like `Fishing Skill XP` -> `fishing-skill-xp`?
- */
+*/
 
-/*  [ ISSUES ]
- *  - When too many notifications happen at once (e.g. when collecting a large buffer of combat loot), some of them are not displayed,
- *    and it seems that `addNotification` is also not fired for these, causing the mod to miss drops.
- */
+/*  [ KNOWN ISSUES ]
+ *  - When an item is unequipped or replaced with a newly equipped item, a notification is fired as if it was received as a new drop.
+ *  - If multiple Mastery Levels are gained at once (i.e. when spending Mastery Pool XP), only a '+1' will be recorded.
+ *    (This could be fixed by adding a `before()` patch that checks the initial Mastery Level?)
+*/
+
+/* *********************************************************************************************************************************************** */
 
 
 export async function setup(ctx: Modding.ModContext) {
   // Because we're loading our templates.min.html file via the manifest.json, the templates aren't available until after the setup() function runs.
   ctx.onInterfaceReady(() => {
-    // Add styles for button icon.
+    // Add styles for rendering pin button icon.
     createIconCSS(ctx);
 
     // Create a store to hold running counts for all drops, shared between components.
     const dropStore = ui.createStore({
-      dropCounts: {} as ItemCounts,
+      dropCounts: {} as NotifCounts,
 
-      addDrop(id: string, label: string, type: NotificationType, icon: string, qty: number) {
+      addDrop(notif: Notif) {
+        // If an empty object was passed, ignore this drop.
+        if (notif === undefined || !('id' in notif))
+          return;
+
+        // If capture is currently paused, ignore this drop.
+        if (props.capturePaused)
+          return;
+
+        let id = notif.id;
+
         // If this drop type has already been seen, update its value in the map.
         if (id in this.dropCounts) {
-          this.dropCounts[id].qty += qty;
-          this.dropCounts[id].qtyText = numberWithCommas(this.dropCounts[id].qty)
+          this.dropCounts[id].qty += notif.qty;
         }
         // If this is a new drop type, add an entry to the map.
         else {
-          this.dropCounts[id] = { label: label, type: type, icon: icon, qty: qty, qtyText: numberWithCommas(qty) }
+          this.dropCounts[id] = notif;
         }
+
+        // For either case, update the printable `qtyText` to match the new quantity:
+
+        // Insert a `+` prefix into the `qtyText` string for certain notification types.
+        let qtyPrefix = '';
+        if (notif.type === 'Mastery')
+          qtyPrefix = '+';
+
+        // Since skill XP values may be fractional, `qty` will hold the exact value, but `qtyText` will be rounded down first.
+        let qtyRounded = Math.floor(this.dropCounts[id].qty);
+        this.dropCounts[id].qtyText = `${qtyPrefix}${numberWithCommas(qtyRounded)}`;
       },
 
       clearAllDrops() {
         delete this.dropCounts;
-        this.dropCounts = {} as ItemCounts;
+        this.dropCounts = {} as NotifCounts;
       },
 
     });
 
-    // Build props to pass down to Drops components.
-    const props: DropsProps = { label: "Pinned Drops", sticky: false };
+    // Initialize props to pass down to components.
+    const props: DropsProps = { label: "Pinned Drops", sticky: false, capturePaused: false };
 
     // Create button and panel components and add them to the top bar.
     placeComponentsInTopbar(props, dropStore);
@@ -121,18 +145,17 @@ function callbackTopbarPinButton(eventType: string, action: string, props: Drops
 
 // Callback function to handle clicks on panel buttons.
 function callbackPanelButtons(eventType: string, action: string, props: DropsProps, store: any) {
-
-  const actionMap = new Map([['start', 2], ['stop', 4], ['reset', 6]]);
-
-  // TEST
   if (eventType === 'click') {
     switch (action) {
-      case 'start':
-        console.log('start');
+      // Pause button
+      case 'pause':
+        props.capturePaused = !props.capturePaused;
+        const pauseBtn = document.getElementById("pd__panel-header-button-pause");
+        pauseBtn.classList.toggle('btn-light');     // On initially
+        pauseBtn.classList.toggle('btn-warning');   // Off initially
+        pauseBtn.classList.toggle('paused');        // Off initially
         break;
-      case 'stop':
-        console.log('stop');
-        break;
+      // Reset button
       case 'reset':
         store.clearAllDrops();
         break;
@@ -171,109 +194,143 @@ function placeComponentsInTopbar(props: DropsProps, dropStore: any) {
 }
 
 function captureNotifications(ctx: Modding.ModContext, props: DropsProps, dropStore: any) {
-    // Values for `key.type` are defined in `NotificationType` (`src\ts\types\gameTypes\notifications.d.ts`) as a base,
-    //  and extended by classes in `/assets/js/built/notifications.js`:
-    const keyTypesAll = ['AddItem', 'RemoveItem', 'AddGP', 'RemoveGP', 'AddSlayerCoins', 'RemoveSlayerCoins', 'SummoningMark', 'Error', 'Success', 'Info', 'AddCurrency', 'RemoveCurrency', 'SkillXP', 'AbyssalXP', 'MasteryLevel'];
-    const keyTypesSkills = ['AddItem', 'AddGP', 'AddSlayerCoins', 'SummoningMark', 'Error', 'Success', 'Info', 'AddCurrency', 'SkillXP', 'AbyssalXP', 'MasteryLevel'];
+    const allNotifTypes = ['Item', 'Stun', 'BankFull', 'LevelUp', 'Player', 'ItemCharges', 'Mastery', 'Mastery99', 'Preserve', 'Currency', 'TutorialTask', 'SkillXP', 'AbyssalXP', 'AbyssalLevelUp'];
 
-    ctx.patch(NotificationsManager, "addNotification").after(
-      // Note: `this.activeNotifications` contains a list of all notifications currently being displayed on the screen.
+    ctx.patch(NotificationQueue, "add").after(
+      // This patch function receives the return value `_` (void) and the `notification` arg of any call to `NotificationQueue.add`.
+      function(_, notification) {
 
-      // This patch function receives the return value `_` (void for this function), and the `key` and `notification` args of any call to `addNotification`.
-      function(_, key, notification) {  // `addNotification(key, notification) -> _`
-
-        // ==== TEST ====
-        if (['MasteryLevel', 'AddGP', 'RemoveGP', 'AddSlayerCoins', 'RemoveSlayerCoins', 'AddCurrency', 'RemoveCurrency', 'SummoningMark', 'Error', 'Success', 'Info'].includes(key.type)) {
-          // console.log(key);
-          // console.log(notification);
-        }
-
-        // Create a unique identifier that will keep track of this drop type in the list.
-        let notifId = '';
-        // Some notifications don't populate the `notification.text` field, so process the notification types to determine a final label.
-        let notifLabel = '';
-
-        // Handle GP
-        if (['AddGP', 'RemoveGP'].includes(key.type)) {
-          notifId = `${NotifTag.CURRENCY}:gp`;
-          notifLabel = 'GP';
-        }
-        // Handle SC
-        else if (['AddSlayerCoins', 'RemoveSlayerCoins'].includes(key.type)) {
-          notifId = `${NotifTag.CURRENCY}:sc`;
-          notifLabel = 'SC';
-        }
-        // Handle other currencies (AC, ASC, RC)
-        else if (['AddCurrency', 'RemoveCurrency'].includes(key.type)) {
-          // Since other currencies don't provide a `notification.text` or any other identification, infer the currency type from the `media` URI.
-          const mediaName = notification.media.match(/main\/([\w]+)\.png/)[1];  // e.g. `https://[URL]/assets/media/main/abyssal_pieces.png`
-          switch (mediaName) {
-            case 'abyssal_pieces':
-              notifId = `${NotifTag.CURRENCY}:ap`;
-              notifLabel = 'AP';
-              break;
-            case 'abyssal_slayer_coins':
-              notifId = `${NotifTag.CURRENCY}:asc`;
-              notifLabel = 'ASC';
-              break;
-            case 'raid_coins':
-              notifId = `${NotifTag.CURRENCY}:rc`;
-              notifLabel = 'RC';
-              break;
-            default:
-              notifId = `${NotifTag.CURRENCY}:unknown`;
-              notifLabel = '';
-              console.error(`[Pinned Drops] Currency type '${mediaName}' not recognized, from path '${notification.media}'.`);
-          }
-        }
-        // Handle Mastery Levels
-        else if (key.type == 'MasteryLevel') {
-          // TODO: `notification.quantity` gives the total current mastery level, so it cannot be accumulated the same way as other drops.
-          //       This will need to be changed in the `addDrop` definition if mastery level gains are included in the drop list.
-          // HACK: Ignore for now.
+        // The `TutorialNotify` type only has a `type` field ('TutorialTask') and no `args` field, so skip it entirely.
+        if (notification.type === 'TutorialTask')
           return;
+
+        // Determine the type of notification and generate a `Notif` object with the relevant notification data.
+        let notif: Notif;
+        switch (notification.type) {
+          case 'Item':
+            notif = _handleItem(notification);
+            break;
+          case 'Stun':
+            notif = _handleIgnore();  // Ignore
+            break;
+          case 'BankFull':
+            notif = _handleIgnore();  // Ignore
+            break;
+          case 'LevelUp':
+            notif = _handleLevelUp(notification);  // TODO: Needs testing
+            break;
+          case 'AbyssalLevelUp':
+            notif = _handleLevelUp(notification);  // TODO: Needs testing
+            break;
+          case 'Player':
+            notif = _handlePlayer(notification);  // TODO: Needs testing
+            break;
+          case 'ItemCharges':
+            notif = _handleIgnore();  // Ignore
+            break;
+          case 'Mastery':
+            notif = _handleMastery(notification);
+            break;
+          case 'Mastery99':
+            notif = _handleMastery(notification);
+            break;
+          case 'Preserve':
+            notif = _handleIgnore();  // Ignore
+            break;
+          case 'Currency':
+            notif = _handleCurrency(notification);
+            break;
+          case 'SkillXP':
+            notif = _handleXP(notification);
+            break;
+          case 'AbyssalXP':
+            notif = _handleXP(notification);  // TODO: Needs testing
+            break;
+          default:
+            notif = _handleIgnore();
         }
-        // Handle info messages
-        else if (['Error', 'Success', 'Info'].includes(key.type)) {
-          // HACK: Ignore for now.
-          return;
-        }
-        // Handle all other drop types ('AddItem', 'RemoveItem', 'SkillXP', 'AbyssalXP', 'SummoningMark')
-        else {
-          // Determine the correct tag for this notification type.
-          let tag = NotifTag.UNKNOWN;
-          if (['AddItem', 'RemoveItem'].includes(key.type)) tag = NotifTag.ITEM;
-          else if (['SkillXP', 'AbyssalXP'].includes(key.type)) tag = NotifTag.SKILL;
-          else if (['SummoningMark'].includes(key.type)) tag = NotifTag.MARK;
-          
-          notifLabel = notification.text;
-          notifId = `${tag}:${formatUniqueId(notifLabel)}`;
-        }
-        
-        // Whenever a new drop notification is triggered, capture it in the store.
-        dropStore.addDrop(notifId, notifLabel, key.type, notification.media, notification.quantity);
+
+        // ---- TEST ----
+        // console.log(notification);
+        // console.log(notif);
+
+        // Add the returned `notif` object to the `dropStore`.
+        dropStore.addDrop(notif);
+
       });
 }
 
-function formatUniqueId(label: string): string {
-  // Format notification text strings into unique IDs.
-  let id;
-
-  id = label.toLowerCase()              // Convert to lowercase
-            .replace(/\s/g, '-')        // Replace all spaces with dashes
-            .replace(/[^\w\s-]/g, '');  // Remove any symbols (`+`, `!`, `.`, `()`)
-
-
-  /* TODO: Possible formatting for `SummoningMark`s?
-  id = label.toLowerCase()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/\d/g, '')
-            .trim()
-            .replace(/\s/g, '-');
+//#region Notification Handlers
+function _handleItem(notification: ItemNotify): Notif {
+  /* [ Notes ]
+   * `args[1]`: Quantity of item received (should always be an integer).
+   * `args[0]['name']`: The name of the item.
+   * `args[0]['category']`: For items received from skills, this is the name of the skill. (Not defined for all items.)
   */
 
-  return id;
+  // Unique identifier for this type of drop. (e.g. `Item:Air_Rune`)
+  let notifId = `${notification.type}:${notification.args[0]['localID']}`;
+
+  return { id: notifId, label: notification.args[0]['name'], type: notification.type, icon: notification.args[0]['media'], qty: notification.args[1], qtyText: '' };
 }
+function _handleLevelUp(notification: LevelUpNotify | AbyssalLevelUp): Notif {
+  return;  // TODO: Ignore for now.
+}
+function _handlePlayer(notification: PlayerNotify): Notif {
+  return;  // TODO: Ignore for now.
+}
+function _handleMastery(notification: MasteryNotify | Mastery99Notify): Notif {
+  /* [ Notes ]
+   * `args[1]`: Contains the new Mastery level, so the quantity for these events should be overwritten, not accumulated.
+   * `args[0]['name']`: The name of the action/item in a skill that has gained a Mastery level.
+   * `args[0]['skill']['localID']`: The name of the skill associated with this action/item.
+  */
+
+  // Ignore `Mastery99` notifications.
+  if (notification.type === 'Mastery99') return;
+
+  // Unique identifier for this type of drop. (e.g. `Currency:GP`)
+  let notifId = `${notification.type}:${notification.args[0]['localID']}`;
+
+  // Construct a label. The `extraIcon` will indicate this is a Mastery Level, so just add the full action name in parentheses here.
+  let notifLabel = `(${notification.args[0]['name']})`;
+
+  // For Mastery Levels, the regular `icon` is set to the Mastery Level icon (`mastery_header.png`), and the `extraIcon` is set to the action/item icon.
+  // HACK: Setting `qty` to 1 to indicate +1 Mastery level will undercount if multiple levels are gained at once (i.e. when spending Mastery Pool XP).
+  return { id: notifId, label: notifLabel, type: notification.type, icon: cdnMedia(icon_MasteryLevel), extraIcon: notification.args[0]['media'], qty: 1, qtyText: '' };
+}
+function _handleCurrency(notification: CurrencyNotify): Notif {
+  /* [ Notes ]
+   * `args[1]`: Amount of currency gained.
+   * `args[0]['name']`: The name of the currency (GP, Slayer Coins, etc).
+  */
+
+  // Unique identifier for this type of drop. (e.g. `Currency:GP`)
+  //@ts-ignore
+  let notifId = `${notification.type}:${notification.args[0]['localID']}`;
+  //@ts-ignore
+  return { id: notifId, label: notification.args[0]['name'], type: notification.type, icon: notification.args[0]['media'], qty: notification.args[1], qtyText: '' };
+}
+function _handleXP(notification: SkillXPNotify | AbyssalXPNotify): Notif {
+  /* [ Notes ]
+   * `args[1]`: Amount of XP gained, as an exact decimal.
+   * `args[0]['name']`: The name of the skill that gained XP.
+  */
+
+  // Unique identifier for this type of drop. (e.g. `SkillXP:Fishing`)
+  let notifId = `${notification.type}:${notification.args[0]['localID']}`;
+
+  // Construct a label. Skill XP `name` fields only contain the name of the skill, so "XP" should be appended.
+  let notifLabel = `${notification.args[0]['name']} XP`;
+
+  return { id: notifId, label: notifLabel, type: notification.type, icon: notification.args[0]['media'], qty: notification.args[1], qtyText: '' };
+}
+function _handleIgnore(): Notif {
+  // Ignore this notification type.
+  return;
+}
+//#endregion
+
 
 // Adapted from [HandyDandyNotebook](https://github.com/WesCook/HandyDandyNotebook/blob/main/src/button.mjs)
 function createIconCSS(ctx: Modding.ModContext) {

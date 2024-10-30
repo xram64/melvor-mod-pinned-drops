@@ -15,8 +15,8 @@ To record notifications, we add a [patch](https://wiki.melvoridle.com/w/Mod_Crea
 **`NotificationQueue.add(notification)`:**
 - `notification: QueuedNotify` is a small dictionary that holds the text, quantity, and media URI needed to render the actual notification popup.
 
-
-Initially, the mod patched the `NotificationsManager.prototype.addNotification(key, notification)` method, which is where notification data is sent immediately before being displayed. But this leads to an issue where some notifications could be missed when several different types of notifications are all fired at once (i.e. when collecting a full buffer of Master Farmer loot), due to the limit set by `NotificationQueue.maxNotifications` (20 by default).
+***Note:***
+*Initially, the mod patched the `NotificationsManager.prototype.addNotification(key, notification)` method, which is where notification data is sent immediately before being displayed. But this leads to an issue where some notifications could be missed when several different types of notifications are all fired at once (i.e. when collecting a full buffer of Master Farmer loot), due to the limit set by `NotificationQueue.maxNotifications` (20 by default).*
 
 
 

@@ -28,22 +28,15 @@
     <div class="pinned-drops panel-header p-1 text-center">
       <div class="pinned-drops panel-header-buttons dropdown-header">
 
-        <button id="pd__panel-header-button-start"
-                class="pinned-drops panel-header-button topbar btn btn-sm btn-light text-dark"
-                @click="clickPanelHeaderButton(event, 'start')"
+        <button id="pd__panel-header-button-pause"
+                class="pinned-drops panel-header-button topbar btn btn-sm text-dark btn-light"
+                @click="clickPanelHeaderButton(event, 'pause')"
                 aria-haspopup="true"
-                title="Start">
-        Start
-        </button>
-        <button id="pd__panel-header-button-stop"
-                class="pinned-drops panel-header-button topbar btn btn-sm btn-light text-dark"
-                @click="clickPanelHeaderButton(event, 'stop')"
-                aria-haspopup="true"
-                title="Stop">
-        Stop
+                title="Pause">
+        Pause
         </button>
         <button id="pd__panel-header-button-reset"
-                class="pinned-drops panel-header-button topbar btn btn-sm btn-light text-dark"
+                class="pinned-drops panel-header-button topbar btn btn-sm text-dark btn-light"
                 @click="clickPanelHeaderButton(event, 'reset')"
                 aria-haspopup="true"
                 title="Reset">
@@ -51,9 +44,6 @@
         </button>
 
       </div>
-      <!-- <h5 class="dropdown-header">
-        Pinned Drops
-      </h5> -->
     </div>
     <div class="pinned-drops panel-content text-dark block-content text-center pt-0">
       <div>
@@ -68,6 +58,7 @@
   <li class="pinned-drops topbar panel-item" v-for="(drop, id) in store.dropCounts" :key="id" :drop-type="drop.type">
     <img :src="drop.icon">
     <span class="pinned-drops panel-item-qty font-w700 mr-1" :class="`text-${(drop.qty > 0) ? 'success' : 'danger'}`">{{ drop.qtyText }}</span>
+    <img v-if="drop.extraIcon !== undefined" :src="drop.extraIcon" style="margin-left: 0.2rem !important; margin-right: 0.2rem !important;">
     <span class="pinned-drops panel-item-text">{{ drop.label }}</span>
   </li>
 </template>
