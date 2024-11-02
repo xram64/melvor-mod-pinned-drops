@@ -55,7 +55,7 @@
 
 <!-- ||[  Top Bar Panel - Item  ]|| -->
 <template id="pd__T__topbar-panel-item">
-  <li class="pinned-drops topbar panel-item" v-for="(drop, id) in store.dropCounts" :key="id" :drop-type="drop.type">
+  <li class="pinned-drops topbar panel-item" v-for="drop in process(store.dropCounts)" :key="drop.id" :drop-type="drop.type">
     <img :src="drop.icon">
     <span class="pinned-drops panel-item-qty font-w700 mr-1" :class="`text-${(drop.qty > 0) ? 'success' : 'danger'}`">{{ drop.qtyText }}</span>
     <img v-if="drop.extraIcon !== undefined" :src="drop.extraIcon" style="margin-left: 0.2rem !important; margin-right: 0.2rem !important;">
@@ -63,18 +63,18 @@
   </li>
 </template>
 
+
+<!-- TODO: [Dropdown View Menu] -->
 <!-- ||[  Top Bar Panel - Dropdown List  ]|| -->
 <template id="pd__T__topbar-panel-dropdown">
   <!-- Copied from Firemaking "Select your logs" dropdown menu -->
   <div class="pinned-drops panel-dropdown dropdown text-center">
     <button type="button" id="pd__topbar-panel-dropdown-button" class="btn btn-light dropdown-toggle" aria-haspopup="true" aria-expanded="false">
-      <span id="pd__topbar-panel-dropdown-active">Since Login</span>
+      <span id="pd__topbar-panel-dropdown-active">{{ props.dropdownOptions[props.dropdownOptionActive] }}</span>
     </button>
     <div class="pinned-drops panel-dropdown dropdown-menu font-size-sm overflow-y-auto" aria-labelledby="pd__topbar-panel-dropdown-button">
-      <a class="dropdown-item pointer-enabled" opt="since_login"><span>Since Login</span></a>
-      <a class="dropdown-item pointer-enabled" opt="session"><span>Session</span></a>
-      <a class="dropdown-item pointer-enabled" opt="skill"><span>Skill</span></a>
-      <a class="dropdown-item pointer-enabled" opt="window"><span>Window</span></a>
+      <a class="dropdown-item pointer-enabled" @click="clickDropdownMenu(event, 'session')"><span>{{ props.dropdownOptions['session'] }}</span></a>
+      <a class="dropdown-item pointer-enabled" @click="clickDropdownMenu(event, 'window')"><span>{{ props.dropdownOptions['window'] }}</span></a>
     </div>
   </div>
 </template>

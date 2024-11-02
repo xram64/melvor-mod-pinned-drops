@@ -1,3 +1,6 @@
+# Notifications
+Information about arguments to `NotificationsManager.addNotification` calls. This method was a first attempt at capturing notifications, but was replaced with a patch to `NotificationQueue.add()` which occurs earlier in the notification chain.
+
 # Example `addNotification` args
 > `addNotification` takes a `key` with detailed info about the logged action, and a `notification` with info specific to rendering the notification (icon, text, quantity).
 
@@ -463,21 +466,6 @@ SummoningMarkNotification {_type: 'SummoningMark', _mark: SummoningRecipe}
     quantity: 1
     text: "Mark of the Crow Discovered! (Level 2)"
     [[Prototype]]: Object
-```
-
-
-
-
-
-
-## `TYPE` :: `CLASS`
-### `key`
-```js
-
-```
-### `notification`
-```js
-
 ```
 
 

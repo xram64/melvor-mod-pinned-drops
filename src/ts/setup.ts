@@ -1,5 +1,5 @@
 // Modules
-import { Notif, NotifCounts, Drops, DropsPanel, DropsPanelItem, DropsProps } from '../components/Drops/Drops';
+import { Notif, Drops, DropsPanel, DropsPanelItem, DropsProps } from '../components/Drops/Drops';
 
 // Styles (relative to this file)
 import '../css/styles.css';
@@ -16,107 +16,84 @@ declare function cdnMedia(baseURI: string): string;  // From `assets/js/built/as
 // Game asset paths
 const icon_MasteryLevel = "assets/media/main/mastery_header.png";
 
-/* *********************************************************************************************************************************************** */
-
-/*  [ TODO ]
- *  - Add a dropdown list (or tabs?) to the drops panel to switch between different sections.
- *    - Use Firemaking log selection dropdown classes: Add `dropdown-item pointer-enabled` to dropdown items.
- *    - An "Overall" section to hold all drops received across a whole session.
- *    - A "Session" section to hold drops received after the player presses a Start button (include buttons at top of tab?).
- *      - Add a timer to also keep track of the elapsed time in a session (compute averages/hr?).
- *  - Add functionality to start/stop/reset drop collection.
- *  - Settings:
- *    - Different button/dropdown location options (similar to HandyDandyNotebook)?
- *    - Toggles for showing/hiding certain drop types in the list.
- *    - List sorting options: "By Order Received", "By Category", "By Value", "Alphabetical".
- *    - Whether to show decimals in combat XP gains (or round).
- *    - Change font size.
- *  - Adjust formatting for drops list.
- *    - Display a faint highlight or border around each line on hover.
- *    ? Add visual grouping for drops (Items, XP, Currency, ...)?
- *    ? Change z-index of panel?
- *    ✓ Put `overflow-y-auto` class and `max-height: 60vh;` style on panel div to limit its size.
- *    ✓ Embed icons in drops panel list to match ones used by notifications.
- *    ✓ Remove dots from <li> rows.
- *    ✓ Add commas to large numbers.
- *  - Show a small 'x' button next to each list item on hover which will clear that drop type from the list.
- *  - Test with "Legacy Notifications" or note incompatibility in description.
- *  ? Also keep track of actions done, like number of successful Thieving attempts (add setting to enable?)?
- *  ? Replace `mouseenter`-type events with `pointerenter`-type events?
- *  ✓ Make a `dev` branch and start pushing updates there.
- *  ✓ Add icon to button, and a second icon (or modify the first) when button is clicked (sticky).
- *  ✓ Expand `dropCounts` to include more info, like icons (make object into a full class?).
- *  ✓ Refactor `dropCounts` to use a generated unique identifier as the index to each list entry, instead of relying on the `text` field?
- *    ✓ Use some operation like `Fishing Skill XP` -> `fishing-skill-xp`?
-*/
-
-/*  [ KNOWN ISSUES ]
- *  - When an item is unequipped or replaced with a newly equipped item, a notification is fired as if it was received as a new drop.
- *  - If multiple Mastery Levels are gained at once (i.e. when spending Mastery Pool XP), only a '+1' will be recorded.
- *    (This could be fixed by adding a `before()` patch that checks the initial Mastery Level?)
-*/
-
-/* *********************************************************************************************************************************************** */
-
 
 export async function setup(ctx: Modding.ModContext) {
-  // Because we're loading our templates.min.html file via the manifest.json, the templates aren't available until after the setup() function runs.
+  // Initialize props to pass down to components.
+  const props: DropsProps = {
+    label: "Pinned Drops",
+    context: ctx,
+    sticky: false,
+    capturePaused: false,
+    dropdownOptions: {'session': 'Session', 'window': 'Window'},  // TODO: [Dropdown View Menu]
+    dropdownOptionActive: 'session',                              // TODO: [Dropdown View Menu]
+  };
+
+  // Create a store to hold running counts for all drops, shared between components.
+  const dropStore = ui.createStore({
+    dropCounts: [] as Array<Notif>,
+
+    addDrop(notif: Notif) {
+      // If an empty object was passed, ignore this drop.
+      if (notif === undefined || !('id' in notif))
+        return;
+
+      // If capture is currently paused, ignore this drop.
+      if (props.capturePaused)
+        return;
+
+      let newDropId = notif.id;
+
+      let newDropIndex = this.dropCounts.findIndex((n: Notif) => n.id === newDropId);
+
+      // If this drop ID has already been recorded, update the existing drop's quantity.
+      if (newDropIndex !== -1) {
+        this.dropCounts[newDropIndex].qty += notif.qty;
+      }
+      // If this is a new drop ID, add a new element for this drop.
+      else {
+        newDropIndex = this.dropCounts.push(notif) - 1;
+      }
+
+      // For either case, update the printable `qtyText` to match the new quantity.
+      let qtyPrefix = (notif.type === 'Mastery' ? '+': '');  // Insert a `+` prefix for Mastery levels
+
+      let qtyExact = this.dropCounts[newDropIndex].qty;
+
+      // Show Decimals: On
+      if (ctx.settings.section('Panel').get('show-decimals')) {
+        this.dropCounts[newDropIndex].qtyText = `${qtyPrefix}${numberWithCommas(qtyExact)}`;
+      }
+      // Show Decimals: Off
+      else {
+        // Since skill XP values in `qty` may be fractional, round down `qtyText` before adding to the list.
+        this.dropCounts[newDropIndex].qtyText = `${qtyPrefix}${numberWithCommas(Math.floor(qtyExact))}`;
+      }
+    },
+
+    // Reset the list
+    clearAllDrops() {
+      delete this.dropCounts;
+      this.dropCounts = [] as Array<Notif>;
+    },
+
+    // Force Vue to redraw the panel by quickly mutating the drops array.
+    forceRefresh() {
+      this.dropCounts.push(0);
+      this.dropCounts.pop();
+    },
+  });
+
+  // Initialize settings menu (must be before components are created).
+  createSettings(ctx, dropStore);
+
+  // Create UI (after offline progress is calculated and all base game UI elements are created).
   ctx.onInterfaceReady(() => {
     // Add styles for rendering pin button icon.
     createIconCSS(ctx);
-
-    // Create a store to hold running counts for all drops, shared between components.
-    const dropStore = ui.createStore({
-      dropCounts: {} as NotifCounts,
-
-      addDrop(notif: Notif) {
-        // If an empty object was passed, ignore this drop.
-        if (notif === undefined || !('id' in notif))
-          return;
-
-        // If capture is currently paused, ignore this drop.
-        if (props.capturePaused)
-          return;
-
-        let id = notif.id;
-
-        // If this drop type has already been seen, update its value in the map.
-        if (id in this.dropCounts) {
-          this.dropCounts[id].qty += notif.qty;
-        }
-        // If this is a new drop type, add an entry to the map.
-        else {
-          this.dropCounts[id] = notif;
-        }
-
-        // For either case, update the printable `qtyText` to match the new quantity:
-
-        // Insert a `+` prefix into the `qtyText` string for certain notification types.
-        let qtyPrefix = '';
-        if (notif.type === 'Mastery')
-          qtyPrefix = '+';
-
-        // Since skill XP values may be fractional, `qty` will hold the exact value, but `qtyText` will be rounded down first.
-        let qtyRounded = Math.floor(this.dropCounts[id].qty);
-        this.dropCounts[id].qtyText = `${qtyPrefix}${numberWithCommas(qtyRounded)}`;
-      },
-
-      clearAllDrops() {
-        delete this.dropCounts;
-        this.dropCounts = {} as NotifCounts;
-      },
-
-    });
-
-    // Initialize props to pass down to components.
-    const props: DropsProps = { label: "Pinned Drops", sticky: false, capturePaused: false };
-
     // Create button and panel components and add them to the top bar.
     placeComponentsInTopbar(props, dropStore);
-
     // Register patch to catch and handle notifications.
     captureNotifications(ctx, props, dropStore);
-
   });
 }
 
@@ -124,10 +101,16 @@ export async function setup(ctx: Modding.ModContext) {
 // Callback function to handle click and mouseover events on the pin button.
 function callbackTopbarPinButton(eventType: string, action: string, props: DropsProps, store: any) {
   if (eventType === 'click') {
-    // Use 'sticky' flag to override mouseover toggles when button has been clicked
+    // Use 'sticky' flag to override mouseover toggles when button has been clicked.
     props.sticky = !props.sticky;
     document.getElementById("pd__topbar-panel").classList.toggle('show', props.sticky);
     document.getElementById("pd__topbar-button").classList.toggle('sticky', props.sticky);
+
+    // If the panel is now open and the `panel-pinned-behavior` setting is set to `pin-until-unfocus`,
+    //  register an event handler on the next click outside of the panel to close it.
+    if (props.sticky && props.context.settings.section('Panel').get('panel-pinned-behavior') === 'pin-until-unfocus') {
+      _handleClicksOutsidePanel(props);
+    }
   }
 
   else if (eventType === 'mouseenter') {
@@ -141,6 +124,28 @@ function callbackTopbarPinButton(eventType: string, action: string, props: Drops
     if (!props.sticky)
       document.getElementById("pd__topbar-panel").classList.toggle('show', false);
   }
+}
+// Event listener on `document` to catch clicks outside of drops panel.
+function _handleClicksOutsidePanel(props: DropsProps) {
+  setTimeout(() => {
+    document.addEventListener("click", function _handleOutsideClick(event) {
+      const target = event.target as HTMLElement;
+
+      // Click landed outside panel (`closest` returned `null`)
+      if (target.closest(".pinned-drops.dropdown-menu") === null) {
+        // Note: This block will run even when the panel is manually closed by clicking the pin button,
+        //  ensuring the listener will be cleaned up when the panel is hidden.
+
+        // Hide panel
+        props.sticky = false;
+        document.getElementById("pd__topbar-panel").classList.toggle('show', props.sticky);
+        document.getElementById("pd__topbar-button").classList.toggle('sticky', props.sticky);
+        
+        // Self cleanup
+        document.removeEventListener("click", _handleOutsideClick);
+      }
+    });
+  }, 0);  // Delay attaching the listener until the next event loop cycle to prevent firing on the click that opened the panel.
 }
 
 // Callback function to handle clicks on panel buttons.
@@ -160,10 +165,34 @@ function callbackPanelButtons(eventType: string, action: string, props: DropsPro
         store.clearAllDrops();
         break;
       default:
-        console.log('ERROR');
+        console.error(`[${props.label}] Unknown button name '${action}'`);
     }
   }
 }
+
+/*  TODO: [Dropdown View Menu]
+function callbackDropdownMenu(eventType: string, action: string, props: DropsProps, store: any) {
+
+  // [PLANNING]
+  // To display drops received in a certain window (1min, 5min, ...),
+  //   timestamps have to be recorded for each incoming drop.
+  // But this also means every drop must be recorded separately so the 
+  //   sum of their quantities can be calculated for the given window.
+
+  if (eventType === 'click') {
+    switch (action) {
+      case 'session':
+        //
+        break;
+      case 'window':
+        //
+        break;
+      default:
+        console.error(`[${props.label}] Unknown dropdown menu option '${action}'`);
+    }
+  }
+}
+*/
 
 // Adapted from [HandyDandyNotebook](https://github.com/WesCook/HandyDandyNotebook/blob/main/src/button.mjs)
 function placeComponentsInTopbar(props: DropsProps, dropStore: any) {
@@ -217,13 +246,13 @@ function captureNotifications(ctx: Modding.ModContext, props: DropsProps, dropSt
             notif = _handleIgnore();  // Ignore
             break;
           case 'LevelUp':
-            notif = _handleLevelUp(notification);  // TODO: Needs testing
+            notif = _handleLevelUp(notification);   // TODO: Needs testing
             break;
           case 'AbyssalLevelUp':
-            notif = _handleLevelUp(notification);  // TODO: Needs testing
+            notif = _handleLevelUp(notification);   // TODO: Needs testing
             break;
           case 'Player':
-            notif = _handlePlayer(notification);  // TODO: Needs testing
+            notif = _handlePlayer(notification);    // TODO: Needs testing
             break;
           case 'ItemCharges':
             notif = _handleIgnore();  // Ignore
@@ -244,17 +273,12 @@ function captureNotifications(ctx: Modding.ModContext, props: DropsProps, dropSt
             notif = _handleXP(notification);
             break;
           case 'AbyssalXP':
-            notif = _handleXP(notification);  // TODO: Needs testing
+            notif = _handleXP(notification);        // TODO: Needs testing
             break;
           default:
             notif = _handleIgnore();
         }
-
-        // ---- TEST ----
-        // console.log(notification);
-        // console.log(notif);
-
-        // Add the returned `notif` object to the `dropStore`.
+        
         dropStore.addDrop(notif);
 
       });
@@ -286,7 +310,7 @@ function _handleMastery(notification: MasteryNotify | Mastery99Notify): Notif {
    * `args[0]['skill']['localID']`: The name of the skill associated with this action/item.
   */
 
-  // Ignore `Mastery99` notifications.
+  // Ignore `Mastery99` notifications
   if (notification.type === 'Mastery99') return;
 
   // Unique identifier for this type of drop. (e.g. `Currency:GP`)
@@ -306,7 +330,7 @@ function _handleCurrency(notification: CurrencyNotify): Notif {
   */
 
   // Unique identifier for this type of drop. (e.g. `Currency:GP`)
-  //@ts-ignore
+  //@ts-ignore  (Type definitions under `CurrencyNotify` are incomplete and don't properly accommodate `args`)
   let notifId = `${notification.type}:${notification.args[0]['localID']}`;
   //@ts-ignore
   return { id: notifId, label: notification.args[0]['name'], type: notification.type, icon: notification.args[0]['media'], qty: notification.args[1], qtyText: '' };
@@ -326,11 +350,79 @@ function _handleXP(notification: SkillXPNotify | AbyssalXPNotify): Notif {
   return { id: notifId, label: notifLabel, type: notification.type, icon: notification.args[0]['media'], qty: notification.args[1], qtyText: '' };
 }
 function _handleIgnore(): Notif {
-  // Ignore this notification type.
+  // Ignore this notification type
   return;
 }
 //#endregion
 
+
+function createSettings(ctx: Modding.ModContext, dropStore: any) {
+	//const sectionPinButton = ctx.settings.section("Pin Button");
+	const sectionPanel = ctx.settings.section("Panel");
+
+  // [Dropdown] Panel sorting options
+	sectionPanel.add({
+		type: "dropdown",
+		name: "panel-sorting",
+		label: "Panel Sorting",
+    hint: "How should drops be sorted as they're added to the panel?",
+		options: [
+      { value: "by-order-received", display: "By Order Received (No sorting)" },
+			{ value: "by-category", display: "By Category" },
+			{ value: "by-quantity-desc", display: "By Quantity (Highest first)" },
+			{ value: "by-quantity-asc", display: "By Quantity (Lowest first)" },
+			{ value: "by-alpha-asc", display: "Alphabetically (A-Z)" },
+			{ value: "by-alpha-desc", display: "Alphabetically (Z-A)" },
+		],
+    default: "by-order-received",
+    onChange: (newValue: string) => {
+      // Redraw panel immediately to reflect new sort order.
+      dropStore.forceRefresh();
+    },
+	});
+
+	// [Dropdown] Click behavior for pin button
+	sectionPanel.add({
+		type: "dropdown",
+		name: "panel-pinned-behavior",
+		label: "Pinned Panel Behavior",
+    hint: "Keep the panel open until manually closed or just until another part of the UI is clicked?",
+		options: [
+      { value: "pin-until-toggle", display: "Stay pinned until toggled off" },
+			{ value: "pin-until-unfocus", display: "Stay pinned until unfocused" },
+		],
+    default: "pin-until-toggle",
+	});
+
+	// [Switch] Show decimal XP gains
+	sectionPanel.add({
+    type: "switch",
+		name: "show-decimals",
+		label: "Show Decimal XP Gains?",
+		hint: "Raw skill XP gains are often decimal numbers which are rounded before being displayed in-game.",
+		default: false,
+    onChange: (newValue: boolean) => {
+      // FIX: This change is not immediate and will only apply when XP is added (`forceRefresh` doesn't work).
+    },
+	});
+
+
+  /* TODO: [Dropdown View Menu]
+  // [Dropdown] Default panel view
+  sectionPanel.add({
+    type: "dropdown",
+    name: "panel-default-view",
+    label: "Default Panel View",
+    hint: "Which panel view should be shown first when the game is loaded?",
+    options: [
+      { value: "view-last", display: "(Keep last view)" },
+      { value: "view-session", display: "Session" },
+      { value: "view-window", display: "Window" },
+    ],
+    default: "view-last",
+  });
+  */
+}
 
 // Adapted from [HandyDandyNotebook](https://github.com/WesCook/HandyDandyNotebook/blob/main/src/button.mjs)
 function createIconCSS(ctx: Modding.ModContext) {

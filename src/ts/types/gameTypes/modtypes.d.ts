@@ -369,13 +369,14 @@ declare namespace Modding {
       /** Stub for settings with dropdowns. */
       options?: unknown;
       /** Method responsible for generating the HTML for the input. */
-      render(name: string, onChange: () => void, config: SettingConfig): HTMLElement;
+      render?(name: string, onChange: () => void, config: SettingConfig): HTMLElement;
       /** Method that handles user input. Return `false` to prevent the value from changing. Return a string to prevent the value from changing and display a validation error. */
-      onChange(value: unknown, previousValue: unknown): void | boolean | string;
+      onChange?(value: unknown, previousValue: unknown): void | boolean | string;
       /** Method responsible for retrieving the current value from the setting's HTML. Must return a value that can be converted to JSON. */
-      get(root: HTMLElement): unknown;
+      get?(root: HTMLElement): unknown;
       /** Method responsible for handling how data is inserted into the setting's HTML. */
-      set(root: HTMLElement, value: unknown): void;
+      set?(root: HTMLElement, value: unknown): void;
+      // [MOD] Changed `render`, `onChange`, `get`, and `set` methods to be optional, since they aren't required when using built-in setting types.
     }
 
     /** Configuration object for text input setting type. */

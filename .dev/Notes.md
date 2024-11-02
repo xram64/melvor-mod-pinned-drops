@@ -1,10 +1,66 @@
+# Todo
+
+```ts
+/*
+ *  - [Dropdown View Menu]
+ *    - (Use Firemaking log selection dropdown classes: Add `dropdown-item pointer-enabled` to dropdown items.)
+ *    - An "Session" view to hold all drops received across a whole session.
+ *    - A "Window" view to hold drops received within a specified time window (1min, 5min, 10min, ...).
+ *    ? A "Skill" view to hold drops reveived within or relevant to the active skill.
+ *  - Settings:
+ *    - Set default mode dropdown menu option (Session/Window).
+ *    - Panel background transparency.
+ *    - Checkboxes for what to track (toggle global filtering for different categories). [ Items | Equipment | Currency | XP | Mastery Levels ]
+ *    ? Panel position.
+ *    ? Toggles for showing/hiding certain drop types in the list (filters).
+ *    ? Change font size.
+ *    ? Different button/panel location options (similar to HandyDandyNotebook)?
+ *    ✓ Click behavior for pin button: "Stay pinned until second click" / "Close when UI is clicked"
+ *    ✓ List sorting options: "By Order Received", "By Category", "By Value", "Alphabetical".
+ *    ✓ Whether to show decimals in combat XP gains (or round).
+ *  - Adjust formatting for drops list.
+ *    - Move panel to far right of window?
+ *    - Display a faint highlight or border around each line on hover.
+ *    - When sorted "By Category", add small section header lines above each category.
+ *      - Add a new `Notif`s field "firstInSection" to flag the first element of each category in `dropCounts`,
+ *        then assign an extra 'class' or 'id' to the tags for those list element so the headers can be placed before them?
+ *    ? Add visual grouping for drops (Items, XP, Currency, ...)?
+ *    ✓ Put `overflow-y-auto` class and `max-height: 60vh;` style on panel div to limit its size.
+ *    ✓ Embed icons in drops panel list to match ones used by notifications.
+ *    ✓ Remove dots from <li> rows.
+ *    ✓ Add commas to large numbers.
+ *  - Show a small 'x' button next to each list item on hover which will clear that drop type from the list.
+ *  - Test with "Legacy Notifications" or note incompatibility in description.
+ *  ? Also keep track of actions done, like number of successful Thieving attempts (add setting to enable?)?
+ *  ? Replace `mouseenter`-type events with `pointerenter`-type events?
+ *  ✓ Add functionality to start/stop/reset drop collection.
+ *  ✓ Make a `dev` branch and start pushing updates there.
+ *  ✓ Add icon to button, and a second icon (or modify the first) when button is clicked (sticky).
+ *  ✓ Expand `dropCounts` to include more info, like icons (make object into a full class?).
+ *  ✓ Refactor `dropCounts` to use a generated unique identifier as the index to each list entry, instead of relying on the `text` field?
+ *    ✓ Use some operation like `Fishing Skill XP` -> `fishing-skill-xp`?
+*/
+```
+
+# Known Issues
+```ts
+/*
+ *  - When an item is unequipped or replaced with a newly equipped item, a notification is fired as if it was received as a new drop.
+ *    These notifications are picked up in the list, and there doesn't seem to be an easy way to differentiate them from actual drops.
+ *  - If multiple Mastery Levels are gained at once (i.e. when spending Mastery Pool XP), only a '+1' will be recorded.
+ *    However, gaining multiple levels "naturally" with a large chunk of Mastery XP (i.e. when harvesting all Herbs) seems to work correctly.
+ *    (This could be fixed by adding a `before()` patch that checks the initial Mastery Level?)
+*/
+```
+
+-----------------------------------------------------------------------------------------------------------------------
+
 # Webpack Reference
 
 - All filepaths used for resources (images) should be relative to the copy of `manifest.json` emitted by webpack (not the source copy), except filepaths used in `import` statements in `.ts` source files.
 
 - [Modules](https://webpack.js.org/configuration/module/)
 - [Modules - Assets](https://webpack.js.org/guides/asset-modules)
-
 
 -----------------------------------------------------------------------------------------------------------------------
 
@@ -37,6 +93,7 @@
 
 
 # `NotificationQueue`
+
 - The `NotificationQueue` class, defined in `utils.js`, puts incoming notifications into a queue.
 - This class limits the number of notifications that can be displayed at once with `maxNotifications`.
   - If the limit is exceeded, notifications are dropped from the queue starting with the oldest (`queue[0]`).
@@ -63,8 +120,6 @@
 - One type of notification, `TutorialNotify`, is missing the `args` field and only has a `type`.
 - The pair (`notification.type`, `notification.args[0]['localID']`) seems to be unique for each differentiable notification type.
 - For some event types (like `Player`), `args` can contain up to 4 elements.
-
-
 
 
 ```js
@@ -109,143 +164,9 @@ class NotificationQueue {
 }
 ```
 
-
-
 -----------------------------------------------------------------------------------------------------------------------
 
 # `game-notification`
-
-## Location
-Melvor Idle DevTools: `/assets/js/built/notifications.js`
-`GameNotificationElement`
-
-## Class
-```js
-class GameNotificationElement extends HTMLElement {
-    constructor() {
-        super();
-        this._content = new DocumentFragment();
-        this._content.append(getTemplateNode('game-notification-template'));
-        this.container = getElementFromFragment(this._content, 'container', 'div');                 // ??
-        this.media = getElementFromFragment(this._content, 'media', 'img');                         // Image thumbnail of item or skill icon
-        this.quantity = getElementFromFragment(this._content, 'quantity', 'span');                  // ?Main quantity being added/subtracted?
-        this.divQuantity = getElementFromFragment(this._content, 'div-quantity', 'div');            // ?Whether quantity is + or -?
-        this.text = getElementFromFragment(this._content, 'text', 'span');                          // Text label for the item/skill (if enabled)
-        this.inBank = getElementFromFragment(this._content, 'in-bank', 'span');                     // ?Total quantity in bank for items (right side)?
-        this.iconImportant = getElementFromFragment(this._content, 'icon-important', 'div');        // ?Tag indicating an important (sticky) notification?
-        this.splashContainer = getElementFromFragment(this._content, 'splash-container', 'div');    // ??
-    }
-    get isCompact() {
-        return this.container.classList.contains('compact');
-    }
-    connectedCallback() {
-        this.appendChild(this._content);
-        this.initSplashManager();
-    }
-    initSplashManager() {
-        this.splashManager = new SplashManager(this.splashContainer);
-    }
-    setNotification(key, notification, game) {
-        this.media.src = notification.media;
-        this.setQuantity(notification, key.type);
-        if (game.settings.showItemNamesInNotifications)
-            this.setText(notification.text);
-        this.toggleCompact();
-    }
-    setImportance(key, notification, game) {
-        if (notification.isImportant) {
-            this.container.style.pointerEvents = 'all';
-            this.container.classList.add('pointer-enabled');
-            this.iconImportant.classList.remove('d-none');
-            this.container.onclick = ()=>{
-                game.notifications.removeNotification(key);
-            }
-            ;
-        } else {
-            this.container.style.pointerEvents = 'none';
-            this.container.classList.remove('pointer-enabled');
-            this.iconImportant.classList.add('d-none');
-            this.container.onclick = ()=>{}
-            ;
-        }
-    }
-    setTextMinWidth(width) {}
-    setText(text) {
-        this.text.innerHTML = text;
-    }
-    setInBankText(text) {
-        this.inBank.textContent = text;
-    }
-    toggleCompact() {
-        if (game.settings.useCompactNotifications) {
-            this.container.classList.add('compact');
-            this.media.classList.add('compact');
-            this.quantity.classList.add('font-size-sm');
-        } else {
-            this.container.classList.remove('compact');
-            this.media.classList.remove('compact');
-            this.quantity.classList.remove('font-size-sm');
-        }
-    }
-    setQuantity(notification, type) {
-        if (notification.quantity === 0)
-            this.divQuantity.classList.add('d-none');
-        else
-            this.divQuantity.classList.remove('d-none');
-        const textClass = notification.quantity > 0 && !notification.isError ? 'text-success' : 'text-danger';
-        const textSymbol = notification.quantity > 0 && !notification.isError && type !== 'MasteryLevel' ? '+' : '';
-        this.quantity.classList.add(textClass);
-        let qty = `${textSymbol}${numberWithCommas(notification.quantity)}`;
-        if (notification.isError) {
-            for (let i = 3; i < notification.quantity; i += 3) {
-                if (i % 12 === 0)
-                    qty = `${textSymbol}${numberWithCommas(notification.quantity)}`;
-                qty += `?`;
-            }
-        }
-        this.quantity.textContent = qty;
-    }
-    setBorder(colour) {
-        this.container.style.border = `1px solid ${colour}`;
-    }
-    setBottomPos(pos) {
-        this.container.style.bottom = `${pos}px`;
-    }
-    setHorizontalPos(posType) {
-        switch (posType) {
-        case 0:
-            this.container.style.left = window.innerWidth >= 992 ? '245px' : '5px';
-            this.container.style.marginRight = '60px';
-            this.container.style.marginLeft = '';
-            this.container.style.right = 'unset';
-            this.container.style.transform = 'translateX(0%)';
-            break;
-        case 2:
-            this.container.style.right = '0px';
-            this.container.style.marginLeft = '10%';
-            this.container.style.marginRight = '60px';
-            this.container.style.left = 'unset';
-            this.container.style.transform = 'translateX(0%)';
-            break;
-        case 1:
-            this.container.style.left = '50%';
-            this.container.style.marginRight = '-40%';
-            this.container.style.marginLeft = '';
-            this.container.style.right = 'unset';
-            this.container.style.transform = 'translateX(-50%)';
-        }
-    }
-    addPulse() {
-        this.divQuantity.classList.add('pulseNotification');
-    }
-    removePulse() {
-        this.divQuantity.classList.remove('pulseNotification');
-    }
-}
-
-window.customElements.define('game-notification', GameNotificationElement);
-```
-
 
 ## Examples:
 
@@ -300,6 +221,7 @@ window.customElements.define('game-notification', GameNotificationElement);
 </game-notification>
 ```
 
+-----------------------------------------------------------------------------------------------------------------------
 
 # Snippets
 
