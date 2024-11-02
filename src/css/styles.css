@@ -12,12 +12,6 @@
   --pd-panel_min-width: 275px;
 }
 
-.pinned-drops.btn.topbar {
-  margin-right: 0.25rem;
-  border-color: var(--btn-bg-light);  /* Copied from `.btn-dual` class */
-  transition: none !important;  /* Disable `.btn` transitions */
-}
-
 .pinned-drops.dropdown-menu {
   /* Copied from inline `header-equipment-dropdown` styles */
   position: absolute;
@@ -41,6 +35,7 @@
   list-style: none;
   padding-left: 0.75rem;
   font-size: 0.8rem;
+  max-height: 65vh;
   /* line-height: 1.4; */
 }
 .pinned-drops.panel-item {
@@ -54,11 +49,19 @@
   margin: 0.1rem 0.4rem;
   vertical-align: top;
 }
+.pinned-drops.panel-dropdown.dropdown-menu {
+  max-height: 30vh;
+  z-index: 99;
+}
+
+.pinned-drops.panel-header-button {
+  padding: 0rem 0.4rem;
+  margin: 0rem 0.2rem;
+}
 
 
-/*|| Light Mode ||*/
-/* Button icons */
-.pinned-drops.btn {
+/*||[ Light Mode ]||*/
+.pinned-drops-pinbutton {
 	width: var(--pd-btn_width);
 	max-height: 32px;  /* Actual button height should be 31.1719, due to styles in `skill-icon-xxs` */
 	background-image: var(--icon-light), linear-gradient(to right, var(--btn-bg-light), var(--btn-bg-light)) !important;
@@ -66,27 +69,43 @@
 	background-repeat: no-repeat !important;
   background-size: 55%;
   background-position: center;
+
+  margin-right: 0.25rem;
+  border-color: var(--btn-bg-light);  /* Copied from `.btn-dual` class */
+  transition: none !important;  /* Disable `.btn` transitions */
 }
-.pinned-drops.btn.topbar:hover {  /* Highlight button on hover */
+.pinned-drops-pinbutton:hover {  /* Highlight button on hover */
   background-image: var(--icon-light), linear-gradient(to right, var(--btn-bg-light-hover), var(--btn-bg-light-hover)) !important;
   background-color: var(--btn-bg-light-hover);
 }
-.pinned-drops.btn.topbar.sticky {  /* Highlight button when panel is sticky (on click) */
+.pinned-drops-pinbutton.sticky {  /* Highlight button when panel is sticky (on click) */
   filter: drop-shadow(0px 1px 3px #00000088);
   background-image: var(--icon-light), linear-gradient(to right, var(--btn-bg-light-sticky), var(--btn-bg-light-sticky)) !important;
   background-color: var(--btn-bg-light-sticky);
 }
 
-/*|| Dark Mode ||*/
-.darkMode .pinned-drops.btn {
+/*||[ Dark Mode ]||*/
+.darkMode .pinned-drops-pinbutton {
 	background-image: var(--icon-dark), linear-gradient(to right, var(--btn-bg-dark), var(--btn-bg-dark)) !important;
   background-color: var(--btn-bg-dark);
 }
-.darkMode .pinned-drops.btn.topbar:hover {  /* Highlight button on hover */
+.darkMode .pinned-drops-pinbutton:hover {  /* Highlight button on hover */
   background-image: var(--icon-dark), linear-gradient(to right, var(--btn-bg-dark-hover), var(--btn-bg-dark-hover)) !important;
   background-color: var(--btn-bg-dark-hover);
 }
-.darkMode .pinned-drops.btn.topbar.sticky {  /* Highlight button when panel is sticky (on click) */
+.darkMode .pinned-drops-pinbutton.sticky {  /* Highlight button when panel is sticky (on click) */
   background-image: var(--icon-dark), linear-gradient(to right, var(--btn-bg-dark-sticky), var(--btn-bg-dark-sticky)) !important;
   background-color: var(--btn-bg-dark-sticky);
+}
+
+/*||[ Scrollbars ]||*/
+.pinned-drops.dropdown-menu::-webkit-scrollbar {
+  width: 10px;
+}
+.pinned-drops.dropdown-menu::-webkit-scrollbar-thumb {
+  background-color: #368265;
+}
+.pinned-drops.dropdown-menu::-webkit-scrollbar-track {
+  background-color: #343c4a;
+  border: 1px solid #434d5b;
 }

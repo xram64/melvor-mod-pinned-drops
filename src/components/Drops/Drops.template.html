@@ -1,13 +1,14 @@
-<!-- Copied from [HandyDandyNotebook](https://github.com/WesCook/HandyDandyNotebook/blob/main/src/button.mjs) -->
+<!-- ||[  Top Bar Container & Button  ]|| -->
 <template id="pd__T__topbar">
+  <!-- Adapted from [HandyDandyNotebook](https://github.com/WesCook/HandyDandyNotebook/blob/main/src/button.mjs) -->
   <div id="pd__topbar-container"
-       class="pinned-drops dropdown d-inline-block">
+       class="pinned-drops dropdown d-inline-block ml-2">
 
     <button id="pd__topbar-button"
-            class="pinned-drops topbar btn btn-sm m1-2"
-            @click="clickButton"
-            @mouseenter="mouseEnterButton"
-            @mouseleave="mouseLeaveButton"
+            class="pinned-drops pinned-drops-pinbutton topbar btn btn-sm"
+            @click="clickTopbarPinButton(event, 'show_panel_sticky')"
+            @mouseenter="mouseEnterTopbarPinButton(event, 'show_panel')"
+            @mouseleave="mouseLeaveTopbarPinButton(event, 'hide_panel')"
             aria-haspopup="true"
             title="Pinned Drops">
       <!-- Insert a transparent 1-pixel image to help match sizing of base game topbar buttons, which are determined by their img tag dimensions -->
@@ -17,16 +18,32 @@
   </div>
 </template>
 
+<!-- ||[  Top Bar Panel  ]|| -->
 <template id="pd__T__topbar-panel">
   <!-- Copied from Equipment Stats dropdown button on top bar. -->
   <div id="pd__topbar-panel"
-       class="pinned-drops topbar dropdown-menu dropdown-menu-lg dropdown-menu-right p-0 border-0 show"
+       class="pinned-drops topbar dropdown-menu dropdown-menu-lg dropdown-menu-right p-0 border-0 overflow-y-auto show"
        aria-labelledby="pd__topbar-button"
        x-placement="bottom-end">
     <div class="pinned-drops panel-header p-1 text-center">
-      <h5 class="dropdown-header">
-        Pinned Drops
-      </h5>
+      <div class="pinned-drops panel-header-buttons dropdown-header">
+
+        <button id="pd__panel-header-button-pause"
+                class="pinned-drops panel-header-button topbar btn btn-sm text-dark btn-light"
+                @click="clickPanelHeaderButton(event, 'pause')"
+                aria-haspopup="true"
+                title="Pause">
+        Pause
+        </button>
+        <button id="pd__panel-header-button-reset"
+                class="pinned-drops panel-header-button topbar btn btn-sm text-dark btn-light"
+                @click="clickPanelHeaderButton(event, 'reset')"
+                aria-haspopup="true"
+                title="Reset">
+        Reset
+        </button>
+
+      </div>
     </div>
     <div class="pinned-drops panel-content text-dark block-content text-center pt-0">
       <div>
@@ -36,10 +53,28 @@
   </div>
 </template>
 
+<!-- ||[  Top Bar Panel - Item  ]|| -->
 <template id="pd__T__topbar-panel-item">
-  <li class="pinned-drops topbar panel-item" v-for="(drop, id) in store.dropCounts" :key="id" :drop-type="drop.type">
+  <li class="pinned-drops topbar panel-item" v-for="drop in process(store.dropCounts)" :key="drop.id" :drop-type="drop.type">
     <img :src="drop.icon">
     <span class="pinned-drops panel-item-qty font-w700 mr-1" :class="`text-${(drop.qty > 0) ? 'success' : 'danger'}`">{{ drop.qtyText }}</span>
+    <img v-if="drop.extraIcon !== undefined" :src="drop.extraIcon" style="margin-left: 0.2rem !important; margin-right: 0.2rem !important;">
     <span class="pinned-drops panel-item-text">{{ drop.label }}</span>
   </li>
+</template>
+
+
+<!-- TODO: [Dropdown View Menu] -->
+<!-- ||[  Top Bar Panel - Dropdown List  ]|| -->
+<template id="pd__T__topbar-panel-dropdown">
+  <!-- Copied from Firemaking "Select your logs" dropdown menu -->
+  <div class="pinned-drops panel-dropdown dropdown text-center">
+    <button type="button" id="pd__topbar-panel-dropdown-button" class="btn btn-light dropdown-toggle" aria-haspopup="true" aria-expanded="false">
+      <span id="pd__topbar-panel-dropdown-active">{{ props.dropdownOptions[props.dropdownOptionActive] }}</span>
+    </button>
+    <div class="pinned-drops panel-dropdown dropdown-menu font-size-sm overflow-y-auto" aria-labelledby="pd__topbar-panel-dropdown-button">
+      <a class="dropdown-item pointer-enabled" @click="clickDropdownMenu(event, 'session')"><span>{{ props.dropdownOptions['session'] }}</span></a>
+      <a class="dropdown-item pointer-enabled" @click="clickDropdownMenu(event, 'window')"><span>{{ props.dropdownOptions['window'] }}</span></a>
+    </div>
+  </div>
 </template>
