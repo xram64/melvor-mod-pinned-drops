@@ -19,7 +19,8 @@
  *    ✓ List sorting options: "By Order Received", "By Category", "By Value", "Alphabetical".
  *    ✓ Whether to show decimals in combat XP gains (or round).
  *  - Adjust formatting for drops list.
- *    - Move panel to far right of window?
+ *    - Move panel or add setting to allow for adjustment.
+ *      - [BUG] Panel goes off-screen on mobile.
  *    - Display a faint highlight or border around each line on hover.
  *    - When sorted "By Category", add small section header lines above each category.
  *      - Add a new `Notif`s field "firstInSection" to flag the first element of each category in `dropCounts`,
@@ -39,17 +40,18 @@
  *  ✓ Expand `dropCounts` to include more info, like icons (make object into a full class?).
  *  ✓ Refactor `dropCounts` to use a generated unique identifier as the index to each list entry, instead of relying on the `text` field?
  *    ✓ Use some operation like `Fishing Skill XP` -> `fishing-skill-xp`?
+ *  - To fix Mastery level issue: Consider adding a `before()` patch that checks the initial Mastery level.
 */
 ```
 
 # Known Issues
 ```ts
 /*
- *  - When an item is unequipped or replaced with a newly equipped item, a notification is fired as if it was received as a new drop.
- *    These notifications are picked up in the list, and there doesn't seem to be an easy way to differentiate them from actual drops.
+ *  - Unequipped items fire notifications as if they were new drops, so they also get picked up in the drops list.
+ *  - On mobile devices, when the Pin icon is positioned in the top bar, content in the bar overflows and covers parts of the UI.
+ *  - On mobile devices, the panel may render mostly off-screen.
+ *  - When Mastery Pool XP is spent to gain multiple Mastery levels in an item at once, the mod will only record a gain of '+1' levels.
  *  - If multiple Mastery Levels are gained at once (i.e. when spending Mastery Pool XP), only a '+1' will be recorded.
- *    However, gaining multiple levels "naturally" with a large chunk of Mastery XP (i.e. when harvesting all Herbs) seems to work correctly.
- *    (This could be fixed by adding a `before()` patch that checks the initial Mastery Level?)
 */
 ```
 
