@@ -1,6 +1,6 @@
 {
   "name": "melvor-mod-pinned-drops",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Stores drop notifications in a persistent list to easily track total XP, item, and currency gains over the duration of a skill training session.",
   "main": "index.js",
   "scripts": {

@@ -41,14 +41,38 @@
 .pinned-drops.panel-item {
   text-align: left;
   /* Allow text to grow panel width, up to a limit. */
+  max-width: 325px;
   width: max-content;
-  max-width: 350px;
 }
-.pinned-drops.panel-item img {
+.pinned-drops.panel-item:hover {
+  background-color: #ffffff08;
+  outline: solid;
+  outline-width: 1px;
+  outline-color: #ffffff38;
+}
+.pinned-drops.panel-item-wrapper {
+  max-width: 300px;
+  display: inline-block;
+}
+.pinned-drops.panel-item-wrapper img {
   height: 14px;
   margin: 0.1rem 0.4rem;
   vertical-align: top;
 }
+.pinned-drops.panel-item-delete {
+  visibility: hidden;
+  float: right;
+  margin: 0rem 0.2rem;
+  font-size: 1.3rem;
+  line-height: 1.1rem;
+  cursor: pointer;
+}
+
+.pinned-drops.panel-item:hover .panel-item-delete {
+  /* Show 'X' button when its parent (`li` item) is hovered */
+  visibility: visible;
+}
+
 .pinned-drops.panel-dropdown.dropdown-menu {
   max-height: 30vh;
   z-index: 99;

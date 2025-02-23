@@ -56,10 +56,14 @@
 <!-- ||[  Top Bar Panel - Item  ]|| -->
 <template id="pd__T__topbar-panel-item">
   <li class="pinned-drops topbar panel-item" v-for="drop in process(store.dropCounts)" :key="drop.id" :drop-type="drop.type">
-    <img :src="drop.icon">
-    <span class="pinned-drops panel-item-qty font-w700 mr-1" :class="`text-${(drop.qty > 0) ? 'success' : 'danger'}`">{{ drop.qtyText }}</span>
-    <img v-if="drop.extraIcon !== undefined" :src="drop.extraIcon" style="margin-left: 0.2rem !important; margin-right: 0.2rem !important;">
-    <span class="pinned-drops panel-item-text">{{ drop.label }}</span>
+    <div class="pinned-drops panel-item-wrapper"> <!-- The `li` spans the whole row while this `div` only wraps the content with `width: max-content` -->
+      <img :src="drop.icon">
+      <span class="pinned-drops panel-item-qty font-w700 mr-1" :class="`text-${(drop.qty > 0) ? 'success' : 'danger'}`">{{ drop.qtyText }}</span>
+      <img v-if="drop.extraIcon !== undefined" :src="drop.extraIcon" style="margin-left: 0.2rem !important; margin-right: 0.2rem !important;">
+      <span class="pinned-drops panel-item-text">{{ drop.label }}</span>
+    </div>
+    <!-- Delete button -->
+    <div class="pinned-drops panel-item-delete text-danger" @click="clickPanelItem(event, 'delete', { id: drop.id })">&times;</div>
   </li>
 </template>
 
