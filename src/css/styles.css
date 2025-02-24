@@ -42,7 +42,6 @@
   text-align: left;
   /* Allow text to grow panel width, up to a limit. */
   max-width: 325px;
-  width: max-content;
 }
 .pinned-drops.panel-item:hover {
   background-color: #ffffff08;
@@ -52,7 +51,7 @@
 }
 .pinned-drops.panel-item-wrapper {
   max-width: 300px;
-  display: inline-block;
+  display: inline;
 }
 .pinned-drops.panel-item-wrapper img {
   height: 14px;
