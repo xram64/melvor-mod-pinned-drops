@@ -9,7 +9,7 @@
 
   /* Dimensions */
   --pd-btn_width: 36px;
-  --pd-panel_min-width: 300px;
+  --pd-panel_min-width: 280px;
 }
 
 .pinned-drops.dropdown-menu {
