@@ -1,5 +1,7 @@
 // Modules
 import { Notif, Drops, DropsPanel, DropsPanelItem, DropsProps, ExtraParams } from '../components/Drops/Drops';
+// @ts-ignore (No type defs)
+import { jsPanel } from 'jspanel4';
 
 // Styles (relative to this file)
 import '../css/styles.css';
@@ -227,6 +229,27 @@ function callbackDropdownMenu(eventType: string, action: string, props: DropsPro
 }
 */
 
+function loadFloatingPanel() {
+  // Ref: https://jspanel.de/#options/overview
+  let options = {
+    headerTitle: 'Pinned Drops',
+    headerControls: 'none',  // 'closeonly'
+    theme: 'dark',
+    position: {
+      my: 'right-center',
+      at: 'right-center',
+      offsetX: '-0.5rem',
+      offsetY: '0rem'
+    },
+    panelSize: '300px 60vh',
+    content: '<p style="text-align:center;">Demo panel....</p>',
+    boxShadow: 0,
+    maximizedMargin: [400, 200],
+  }
+
+  jsPanel.create(options);
+}
+
 // Adapted from [HandyDandyNotebook](https://github.com/WesCook/HandyDandyNotebook/blob/main/src/button.mjs)
 function placeComponentsInTopbar(props: DropsProps, dropStore: any) {
 
@@ -253,6 +276,9 @@ function placeComponentsInTopbar(props: DropsProps, dropStore: any) {
   /* | Panel List | */
   const pinnedDropsPanelItemlist = document.getElementById("pd__topbar-panel-itemlist");
   ui.create(DropsPanelItem("#pd__T__topbar-panel-item", props, dropStore, callbackPanelItem), pinnedDropsPanelItemlist);
+
+  /* | Floating Panel | */
+  loadFloatingPanel();
 }
 
 /* ~~~~ WIP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
