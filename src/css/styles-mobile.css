@@ -14,3 +14,11 @@
     transform: translate3d(0px, 31px, 0px);
   }
 }
+
+@media (372px <= width <= 450px) {
+  .pinned-drops.dropdown-menu {
+    /* When window is narrow enough for the panel to go partially off-screen, but not enough for the
+       button to snap to the second row, add an adjustment to the panel position to keep it on-screen */
+    transform: translate3d(calc(var(--pd-btn_width) - var(--pd-panel_min-width) + 10vw), 31px, 0px);
+  }
+}
