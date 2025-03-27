@@ -1,8 +1,11 @@
 // Modules
 import { Notif, Drops, DropsPanel, DropsPanelItem, DropsProps, ExtraParams } from '../components/Drops/Drops';
 
+import debounce from 'lodash.debounce';
+
 // Styles (relative to this file)
 import '../css/styles.css';
+import '../css/styles-mobile.css';
 
 // Images (relative to this file)
 import '../img/icon.png';
@@ -102,8 +105,8 @@ export async function setup(ctx: Modding.ModContext) {
   ctx.onInterfaceReady(() => {
     // Add styles for rendering pin button icon.
     createIconCSS(ctx);
-    // Create button and panel components and add them to the top bar.
-    placeComponentsInTopbar(props, dropStore);
+    // Create button and panel components and position them according to settings.
+    initializeComponents(props, dropStore);
     // Register patch to catch and handle notifications.
     captureNotifications(ctx, props, dropStore);
   });
@@ -227,36 +230,79 @@ function callbackDropdownMenu(eventType: string, action: string, props: DropsPro
 }
 */
 
-// Adapted from [HandyDandyNotebook](https://github.com/WesCook/HandyDandyNotebook/blob/main/src/button.mjs)
-function placeComponentsInTopbar(props: DropsProps, dropStore: any) {
 
-  /* | Button | */
+// Initialize DOM elements and call the appropriate function to place them.
+function initializeComponents(props: DropsProps, dropStore: any) {
+
+  /* || Button || */
 	// Create mod button
 	ui.create(Drops("#pd__T__topbar", props, dropStore, callbackTopbarPinButton), document.body);
 	const pinnedDropsDiv = document.getElementById("pd__topbar-container");
 	const pinnedDropsButton = document.getElementById("pd__topbar-button");
-  
-	// Insert div before the 'potions' icon in the top bar
-	const potionsDiv = document.getElementById("page-header-potions-dropdown").parentNode;
-	const topBarFlexDiv = potionsDiv.parentNode;
-  topBarFlexDiv.insertBefore(pinnedDropsDiv, potionsDiv);
-  
-  /* | Panel | */
+
+  /* || Panel || */
   // Create drops panel (will not show until activated by mod button)
   ui.create(DropsPanel("#pd__T__topbar-panel", props, dropStore, callbackPanelButtons), document.body);
 	const pinnedDropsPanel = document.getElementById("pd__topbar-panel");
   pinnedDropsPanel.classList.toggle('show', false);  // Make sure `show` is initially off for panel
-
   // Append the panel to the parent pinned-drops div
   pinnedDropsDiv.appendChild(pinnedDropsPanel);
 
-  /* | Panel List | */
+  /* || Panel List || */
+  // Create the list element as a child of the panel
   const pinnedDropsPanelItemlist = document.getElementById("pd__topbar-panel-itemlist");
   ui.create(DropsPanelItem("#pd__T__topbar-panel-item", props, dropStore, callbackPanelItem), pinnedDropsPanelItemlist);
+
+
+  // TODO: Check conditions here (including defaults and settings)
+  //       to determine where the components should be placed.
+
+  // HACK: (TEMPORARY) Force "topbar" mode.
+  placeComponentsInTopbar(props, dropStore, pinnedDropsDiv, true)  // 'init' = true
+
+}
+
+// Adapted from [HandyDandyNotebook](https://github.com/WesCook/HandyDandyNotebook/blob/main/src/button.mjs)
+function placeComponentsInTopbar(props: DropsProps, dropStore: any, pinnedDropsDiv: HTMLElement, init: boolean = false): any {
+  // Define two positions for the top bar pin button, depending on device width:
+  //  - Desktop (≥ 372px): Top-right button row in header, just left of potions button.
+  //  - Mobile  (< 372px): Far left of second header row, opposite to 'cloud save' elements.
+
+  // Note: On creation, the `pinnedDropsDiv` element is appended to `document.body`, and only moved into position
+  //       by a `insertBefore()` call. In any case, `insertBefore()` *moves* the element from one parent to another,
+  //       so no duplicate elements are made when calling this function multiple times.
+
+  // If the 'init' flag is set, add an event listener to watch the width of the window.
+  if (init) {
+    const _debouncedResizeHandler = debounce(placeComponentsInTopbar, 250, { 'leading': true, 'trailing': true });
+    window.addEventListener("resize", () => { _debouncedResizeHandler(props, dropStore, pinnedDropsDiv) });
+  }
+
+  // Desktop
+  if (window.innerWidth >= 372) {
+    // If the button is already in this position, don't try to move it again.
+    if (pinnedDropsDiv.getAttribute('device-mode') == 'desktop') return
+
+    const potionsDiv = document.getElementById("page-header-potions-dropdown").parentNode;
+    const topBarDivForDesktop = potionsDiv.parentNode;
+    topBarDivForDesktop.insertBefore(pinnedDropsDiv, potionsDiv);  // Move `pinnedDropsDiv` to immediate left of potions button
+    pinnedDropsDiv.setAttribute('device-mode', 'desktop')
+  }
+  // Mobile
+  else {
+    // If the button is already in this position, don't try to move it again.
+    if (pinnedDropsDiv.getAttribute('device-mode') == 'mobile') return
+
+    const cloudSaveTimeSpan = document.getElementById("header-cloud-save-time");
+    const topBarDivForMobile = cloudSaveTimeSpan.parentNode;
+    topBarDivForMobile.insertBefore(pinnedDropsDiv, cloudSaveTimeSpan);  // Move `pinnedDropsDiv` to far left of cloud save row
+    pinnedDropsDiv.setAttribute('device-mode', 'mobile')
+  }
+
 }
 
 /* ~~~~ WIP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-function placeComponentsInSidebar(props: DropsProps, dropStore: any) {
+function placeComponentsInSidebar(props: DropsProps, dropStore: any): any {
 
 	// Add a custom category to the sidebar, just above the Combat section.
   sidebar.category('Pinned Drops', {

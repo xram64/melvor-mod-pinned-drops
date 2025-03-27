@@ -8,7 +8,7 @@
  *    - Set default mode dropdown menu option (Session/Window).
  *    - "Panel Location": [Top Bar - Normal] | [Top Bar - Sticky] | [Sidebar] | [Floating]
  *      - [Top Bar - Normal]: Panel in normal position (top-right), fixed to the top bar.
- *      - [Top Bar - Sticky]: Panel in normal position (top-right), but scrolls with page.
+ *      - [Top Bar - Sticky]: Panel in normal position (top-right), but scrolls with page. (Use `position: sticky`?)
  *      - [Sidebar]: Inline sidebar list (list height setting? category positioning setting? collapsable?).
  *      - [Floating]: Floating pane that can be dragged and resized.
  *    ? Set panel horizontal position.
@@ -19,8 +19,7 @@
  *    ? Show/hide delete ('x') buttons on list rows.
  * 
  *  [Formatting]
- *    - Move panel or add setting to allow for adjustment.
- *      - [BUG] Panel goes off-screen on mobile.
+ *    - Move panel or add setting to allow for adjusting panel position.
  *    - When sorted "By Category", add small section header lines above each category.
  *      - Add a new `Notif`s field "firstInSection" to flag the first element of each category in `dropCounts`,
  *        then assign an extra 'class' or 'id' to the tags for those list element so the headers can be placed before them?
@@ -56,16 +55,14 @@
  *    ✓ Embed icons in drops panel list to match ones used by notifications.
  *    ✓ Remove dots from <li> rows.
  *    ✓ Add commas to large numbers.
+ *    ✓ [BUG] Panel goes off-screen on mobile.
 */
 ```
 
 ## Known Issues
 ```ts
 /*
- *  - Unequipped items fire notifications as if they were new drops, so they also get picked up in the drops list.
- *  - On mobile devices, when the Pin icon is positioned in the top bar, content in the bar overflows and covers parts of the UI.
- *  - On mobile devices, the panel may render mostly off-screen.
- *  - When Mastery Pool XP is spent to gain multiple Mastery levels in an item at once, the mod will only record a gain of '+1' levels.
+ *  - Equipped items fire notifications when unequipped as if they were new drops, so they also get picked up in the drops list.
  *  - If multiple Mastery Levels are gained at once (i.e. when spending Mastery Pool XP), only a '+1' will be recorded.
 */
 ```

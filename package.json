@@ -1,6 +1,6 @@
 {
   "name": "melvor-mod-pinned-drops",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Stores drop notifications in a persistent list to easily track total XP, item, and currency gains over the duration of a skill training session.",
   "main": "index.js",
   "scripts": {
@@ -14,32 +14,36 @@
   "author": "xram",
   "license": "MIT",
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/xram64/melvor-mod-pinned-drops.git"
+    "type": "git",
+    "url": "https://github.com/xram64/melvor-mod-pinned-drops.git"
   },
   "devDependencies": {
-		"@types/ifvisible": "^1.1.0",
-		"@types/ion-rangeslider": "^2.3.2",
+    "@types/ifvisible": "^1.1.0",
+    "@types/ion-rangeslider": "^2.3.2",
+    "@types/lodash.debounce": "^4.0.9",
     "@types/node": "^18.11.13",
-		"@types/sortablejs": "^1.10.6",
+    "@types/sortablejs": "^1.10.6",
     "archiver": "^5.3.1",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.1",
     "del": "^7.0.0",
-		"dexie": "^3.2.2",
-		"fflate": "^0.7.3",
-		"fuse.js": "^3.4.6",
+    "dexie": "^3.2.2",
+    "fflate": "^0.7.3",
+    "fuse.js": "^3.4.6",
     "html-minifier-terser": "^7.0.0",
-		"mitt": "^3.0.0",
-		"petite-vue": "^0.4.1",
-		"simplebar": "^5.3.6",
+    "mitt": "^3.0.0",
+    "petite-vue": "^0.4.1",
+    "simplebar": "^5.3.6",
     "style-loader": "^3.3.1",
-		"sweetalert2": "^11.4.16",
-		"tippy.js": "^6.2.6",
+    "sweetalert2": "^11.4.16",
+    "tippy.js": "^6.2.6",
     "ts-loader": "^9.4.1",
     "typescript": "^4.8.4",
     "uuid": "^9.0.0",
     "webpack": "^5.74.0",
     "webpack-cli": "^4.10.0"
+  },
+  "dependencies": {
+    "lodash.debounce": "^4.0.8"
   }
 }

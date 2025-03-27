@@ -1,0 +1,16 @@
+/*** Handle transitions for mobile resolutions ***/
+
+@media (372px <= width <= 411px) {
+  /* With margin-left at 0px, the pin button snaps to the second row at or below 411px. */
+  /* With any margin-left, the pin button snaps below 372px. */
+  .pinned-drops-pinbutton {
+    margin-left: min(calc(100vw - 411px), 0px);
+  }
+}
+
+@media (width < 372px) {
+  /* Switch panel to right of button when below 372px (after button snaps to next row) */
+  .pinned-drops.dropdown-menu {
+    transform: translate3d(0px, 31px, 0px);
+  }
+}
