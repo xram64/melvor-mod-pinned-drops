@@ -73,13 +73,15 @@
 > Checklist for pushing an update.
 - *Push in-testing changes to `dev` branch, and merge to `master` branch when update is ready.*
 - Increment version in `package.json` and run `npm install` to force-refresh `package-lock.json`.
-- Run `npm buildzip` to generate a build in `/dist`, and a corresponding zip package in `/package`.
+- Run `npm run buildzip` to generate a build in `/dist`, and a corresponding zip package in `/package`.
 - Add a new entry to the changelog in `README.md`.
 - Upload new version to **Mod.io**.
   1. Open the mod's [admin panel](https://mod.io/g/melvoridle/m/pinned-drops/admin/settings).
   2. In *Files*, upload the zip package from `/package` (via *Add a new file*).
-  3. For the other boxes, enter the version number and **the body of the current changelog entry** only.
-  4. In *Mod profile*, edit the Description to append the new changelog entry (copy from `README.md`).
+  3. For *Version*, enter the version number (e.g. `1.0.0`)
+  4. For *Changelog*, enter each item in the current changelog entry as a separate line, with no predceeding `-`. Changelog items can be shortened or summarized to key points in this box (this will appear at the top of the in-game mod listing).
+  5. Back in the *Mod profile* tab, edit the Description to append the new full changelog entry, copied from `README.md` (and converted to HTML).
+- Copy the updated Mod.io description into `.dev/Mod.io/Mod.io.md`, and copy the zip package for the new version into `.dev/Mod.io/Releases`.
 
 
 

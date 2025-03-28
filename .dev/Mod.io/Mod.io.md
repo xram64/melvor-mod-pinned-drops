@@ -1,7 +1,5 @@
 # Mod.io - Pinned Drops
 
-## Releases
-
 ## Mod profile
 ### Description
 ```html
@@ -22,10 +20,11 @@
 </ul>
 <p>&nbsp;</p>
 <hr />
-<h4>Changelog</h4>
-<p><strong><code>v1.1.0</code>&nbsp; (2/26/25)</strong></p>
+<h4>Full Changelog</h4>
+<p><strong><code>v1.1.0</code>&nbsp; (3/27/25)</strong></p>
 <ul>
-<li>Added highlighting and delete buttons when panel list items are hovered over.</li>
+<li>Fixed mobile display issues. For narrow screens, pin button now snaps to the second row of the top bar to avoid overflowing the first row. Panel also changes opening direction to stay on the screen.</li>
+<li>Added highlighting and delete buttons ('x') to each row of the panel list, visible on mouseover.</li>
 </ul>
 <p><strong><code>v1.0.0</code>&nbsp; (11/2/24)</strong></p>
 <ul>

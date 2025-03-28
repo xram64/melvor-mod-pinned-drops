@@ -17,7 +17,11 @@ Stores drop notifications in a persistent list to easily track total XP, item, a
 - Toggle whether to show the exact decimal values of XP gains or the usual rounded values (see Mod Settings).
 
 
-## Changelog
+## Full Changelog
+
+### `v1.1.0` (3/27/25)
+- Fixed mobile display issues. For narrow screens, pin button now snaps to the second row of the top bar to avoid overflowing the first row. Panel also changes opening direction to stay on the screen.
+- Added highlighting and delete buttons ('x') to each row of the panel list, visible on mouseover.
 
 ### `v1.0.0` (11/2/24)
 - Initial release.
