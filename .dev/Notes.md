@@ -82,6 +82,9 @@
   4. For *Changelog*, enter each item in the current changelog entry as a separate line, with no predceeding `-`. Changelog items can be shortened or summarized to key points in this box (this will appear at the top of the in-game mod listing).
   5. Back in the *Mod profile* tab, edit the Description to append the new full changelog entry, copied from `README.md` (and converted to HTML).
 - Copy the updated Mod.io description into `.dev/Mod.io/Mod.io.md`, and copy the zip package for the new version into `.dev/Mod.io/Releases`.
+- Finalize repo changes and merge `dev` into `master`.
+  - If there are no conflicts, the merge will be auto-committed.
+  - In this case, run `Commit (Ammend)` before pushing to remote, and manually edit the commit message.
 
 
 
