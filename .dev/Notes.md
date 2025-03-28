@@ -2,61 +2,93 @@
 
 ```ts
 /*
- *  - [Dropdown View Menu]
- *    - (Use Firemaking log selection dropdown classes: Add `dropdown-item pointer-enabled` to dropdown items.)
- *    - An "Session" view to hold all drops received across a whole session.
- *    - A "Window" view to hold drops received within a specified time window (1min, 5min, 10min, ...).
- *    ? A "Skill" view to hold drops reveived within or relevant to the active skill.
- *  - Settings:
- *    - Set default mode dropdown menu option (Session/Window).
- *    - Panel background transparency.
+ *  [Settings]
+ *    - Make panel background transparent. Or, toggle setting opacity (~75%) when panel is unfocused.
  *    - Checkboxes for what to track (toggle global filtering for different categories). [ Items | Equipment | Currency | XP | Mastery Levels ]
- *    ? Panel position.
+ *    - Set default mode dropdown menu option (Session/Window).
+ *    - "Panel Location": [Top Bar - Normal] | [Top Bar - Sticky] | [Sidebar] | [Floating]
+ *      - [Top Bar - Normal]: Panel in normal position (top-right), fixed to the top bar.
+ *      - [Top Bar - Sticky]: Panel in normal position (top-right), but scrolls with page. (Use `position: sticky`?)
+ *      - [Sidebar]: Inline sidebar list (list height setting? category positioning setting? collapsable?).
+ *      - [Floating]: Floating pane that can be dragged and resized.
+ *    ? Set panel horizontal position.
+ *    ? Toggle sticky/float mode (absolute positioning for panel so that it scrolls with the page)
  *    ? Toggles for showing/hiding certain drop types in the list (filters).
  *    ? Change font size.
  *    ? Different button/panel location options (similar to HandyDandyNotebook)?
- *    ✓ Click behavior for pin button: "Stay pinned until second click" / "Close when UI is clicked"
- *    ✓ List sorting options: "By Order Received", "By Category", "By Value", "Alphabetical".
- *    ✓ Whether to show decimals in combat XP gains (or round).
- *  - Adjust formatting for drops list.
- *    - Move panel to far right of window?
- *    - Display a faint highlight or border around each line on hover.
+ *    ? Show/hide delete ('x') buttons on list rows.
+ * 
+ *  [Formatting]
+ *    - Move panel or add setting to allow for adjusting panel position.
  *    - When sorted "By Category", add small section header lines above each category.
  *      - Add a new `Notif`s field "firstInSection" to flag the first element of each category in `dropCounts`,
  *        then assign an extra 'class' or 'id' to the tags for those list element so the headers can be placed before them?
  *    ? Add visual grouping for drops (Items, XP, Currency, ...)?
+ * 
+ *  [Dropdown View Menu]
+ *    - (Use Firemaking log selection dropdown classes: Add `dropdown-item pointer-enabled` to dropdown items.)
+ *    - An "Session" view to hold all drops received across a whole session.
+ *    - A "Window" view to hold drops received within a specified time window (1min, 5min, 10min, ...).
+ *    ? A "Skill" view to hold drops reveived within or relevant to the active skill.
+ * 
+ *  [Other]
+ *    - To fix Mastery level issue: Consider adding a `before()` patch that checks the initial Mastery level.
+ *    - Test with "Legacy Notifications" or note incompatibility in description.
+ *    ? Also keep track of actions done, like number of successful Thieving attempts (add setting to enable?)?
+ *    ? Replace `mouseenter`-type events with `pointerenter`-type events?
+ * 
+ *  [Done!]
+ *    ✓ Add functionality to start/stop/reset drop collection.
+ *    ✓ Make a `dev` branch and start pushing updates there.
+ *    ✓ Add icon to button, and a second icon (or modify the first) when button is clicked (sticky).
+ *    ✓ Expand `dropCounts` to include more info, like icons (make object into a full class?).
+ *    ✓ Refactor `dropCounts` to use a generated unique identifier as the index to each list entry, instead of relying on the `text` field?
+ *      ✓ Use some operation like `Fishing Skill XP` -> `fishing-skill-xp`?
+ *    ✓ Show a small 'x' button next to each list item on hover which will clear that drop type from the list.
+ *  Settings
+ *    ✓ Click behavior for pin button: "Stay pinned until second click" / "Close when UI is clicked"
+ *    ✓ List sorting options: "By Order Received", "By Category", "By Value", "Alphabetical".
+ *    ✓ Whether to show decimals in combat XP gains (or round).
+ *  Formatting
+ *    ✓ Display a faint highlight or border around each line on hover.
  *    ✓ Put `overflow-y-auto` class and `max-height: 60vh;` style on panel div to limit its size.
  *    ✓ Embed icons in drops panel list to match ones used by notifications.
  *    ✓ Remove dots from <li> rows.
  *    ✓ Add commas to large numbers.
- *  - Show a small 'x' button next to each list item on hover which will clear that drop type from the list.
- *  - Test with "Legacy Notifications" or note incompatibility in description.
- *  ? Also keep track of actions done, like number of successful Thieving attempts (add setting to enable?)?
- *  ? Replace `mouseenter`-type events with `pointerenter`-type events?
- *  ✓ Add functionality to start/stop/reset drop collection.
- *  ✓ Make a `dev` branch and start pushing updates there.
- *  ✓ Add icon to button, and a second icon (or modify the first) when button is clicked (sticky).
- *  ✓ Expand `dropCounts` to include more info, like icons (make object into a full class?).
- *  ✓ Refactor `dropCounts` to use a generated unique identifier as the index to each list entry, instead of relying on the `text` field?
- *    ✓ Use some operation like `Fishing Skill XP` -> `fishing-skill-xp`?
+ *    ✓ [BUG] Panel goes off-screen on mobile.
 */
 ```
 
-# Known Issues
+## Known Issues
 ```ts
 /*
- *  - When an item is unequipped or replaced with a newly equipped item, a notification is fired as if it was received as a new drop.
- *    These notifications are picked up in the list, and there doesn't seem to be an easy way to differentiate them from actual drops.
+ *  - Equipped items fire notifications when unequipped as if they were new drops, so they also get picked up in the drops list.
  *  - If multiple Mastery Levels are gained at once (i.e. when spending Mastery Pool XP), only a '+1' will be recorded.
- *    However, gaining multiple levels "naturally" with a large chunk of Mastery XP (i.e. when harvesting all Herbs) seems to work correctly.
- *    (This could be fixed by adding a `before()` patch that checks the initial Mastery Level?)
 */
 ```
 
 -----------------------------------------------------------------------------------------------------------------------
 
-# Webpack Reference
+# Mod Updates
+> Checklist for pushing an update.
+- *Push in-testing changes to `dev` branch, and merge to `master` branch when update is ready.*
+- Increment version in `package.json` and run `npm install` to force-refresh `package-lock.json`.
+- Run `npm run buildzip` to generate a build in `/dist`, and a corresponding zip package in `/package`.
+- Add a new entry to the changelog in `README.md`.
+- Upload new version to **Mod.io**.
+  1. Open the mod's [admin panel](https://mod.io/g/melvoridle/m/pinned-drops/admin/settings).
+  2. In *Files*, upload the zip package from `/package` (via *Add a new file*).
+  3. For *Version*, enter the version number (e.g. `1.0.0`)
+  4. For *Changelog*, enter each item in the current changelog entry as a separate line, with no predceeding `-`. Changelog items can be shortened or summarized to key points in this box (this will appear at the top of the in-game mod listing).
+  5. Back in the *Mod profile* tab, edit the Description to append the new full changelog entry, copied from `README.md` (and converted to HTML).
+- Copy the updated Mod.io description into `.dev/Mod.io/Mod.io.md`, and copy the zip package for the new version into `.dev/Mod.io/Releases`.
+- Finalize repo changes and merge `dev` into `master`.
+  - If there are no conflicts, the merge will be auto-committed.
+  - In this case, run `Commit (Ammend)` before pushing to remote, and manually edit the commit message.
 
+
+
+## Webpack Reference
 - All filepaths used for resources (images) should be relative to the copy of `manifest.json` emitted by webpack (not the source copy), except filepaths used in `import` statements in `.ts` source files.
 
 - [Modules](https://webpack.js.org/configuration/module/)

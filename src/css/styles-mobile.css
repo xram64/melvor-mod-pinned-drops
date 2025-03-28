@@ -1,0 +1,24 @@
+/*** Handle transitions for mobile resolutions ***/
+
+@media (372px <= width <= 411px) {
+  /* With margin-left at 0px, the pin button snaps to the second row at or below 411px. */
+  /* With any margin-left, the pin button snaps below 372px. */
+  .pinned-drops-pinbutton {
+    margin-left: min(calc(100vw - 411px), 0px);
+  }
+}
+
+@media (width < 372px) {
+  /* Switch panel to right of button when below 372px (after button snaps to next row) */
+  .pinned-drops.dropdown-menu {
+    transform: translate3d(0px, 31px, 0px);
+  }
+}
+
+@media (372px <= width <= 450px) {
+  .pinned-drops.dropdown-menu {
+    /* When window is narrow enough for the panel to go partially off-screen, but not enough for the
+       button to snap to the second row, add an adjustment to the panel position to keep it on-screen */
+    transform: translate3d(calc(var(--pd-btn_width) - var(--pd-panel_min-width) + 10vw), 31px, 0px);
+  }
+}

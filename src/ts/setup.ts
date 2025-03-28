@@ -1,8 +1,11 @@
 // Modules
-import { Notif, Drops, DropsPanel, DropsPanelItem, DropsProps } from '../components/Drops/Drops';
+import { Notif, Drops, DropsPanel, DropsPanelItem, DropsProps, ExtraParams } from '../components/Drops/Drops';
+
+import debounce from 'lodash.debounce';
 
 // Styles (relative to this file)
 import '../css/styles.css';
+import '../css/styles-mobile.css';
 
 // Images (relative to this file)
 import '../img/icon.png';
@@ -15,7 +18,6 @@ declare function cdnMedia(baseURI: string): string;  // From `assets/js/built/as
 
 // Game asset paths
 const icon_MasteryLevel = "assets/media/main/mastery_header.png";
-
 
 export async function setup(ctx: Modding.ModContext) {
   // Initialize props to pass down to components.
@@ -70,6 +72,19 @@ export async function setup(ctx: Modding.ModContext) {
       }
     },
 
+    // Remove a drop from the store.
+    removeDrop(dropId: string) {
+      // Find the index of this drop in the store by its ID.
+      let dropIndex = this.dropCounts.findIndex((n: Notif) => n.id === dropId);
+
+      // If this drop ID cannot be found, ignore this request.
+      if (dropIndex == -1)
+        return;
+
+      // If the ID was found, remove its entry from the array.
+      this.dropCounts.splice(dropIndex, 1);
+    },
+
     // Reset the list
     clearAllDrops() {
       delete this.dropCounts;
@@ -90,13 +105,14 @@ export async function setup(ctx: Modding.ModContext) {
   ctx.onInterfaceReady(() => {
     // Add styles for rendering pin button icon.
     createIconCSS(ctx);
-    // Create button and panel components and add them to the top bar.
-    placeComponentsInTopbar(props, dropStore);
+    // Create button and panel components and position them according to settings.
+    initializeComponents(props, dropStore);
     // Register patch to catch and handle notifications.
     captureNotifications(ctx, props, dropStore);
   });
 }
 
+//#region Callbacks
 
 // Callback function to handle click and mouseover events on the pin button.
 function callbackTopbarPinButton(eventType: string, action: string, props: DropsProps, store: any) {
@@ -170,6 +186,26 @@ function callbackPanelButtons(eventType: string, action: string, props: DropsPro
   }
 }
 
+// Callback function to handle clicks on panel items.
+function callbackPanelItem(eventType: string, action: string, props: DropsProps, store: any, extraParams: ExtraParams) {
+  if (eventType === 'click') {
+    switch (action) {
+      // Delete button ('x')
+      case 'delete':
+        // If an empty object was somehow passed, ignore the event.
+        if (extraParams === undefined || !('id' in extraParams))
+          break;
+
+        // Delete the corresponding drop from the drop store.
+        store.removeDrop(extraParams.id);
+
+        break;
+      default:
+        console.error(`[${props.label}] Unknown item action '${action}'`);
+    }
+  }
+}
+
 /*  TODO: [Dropdown View Menu]
 function callbackDropdownMenu(eventType: string, action: string, props: DropsProps, store: any) {
 
@@ -194,33 +230,97 @@ function callbackDropdownMenu(eventType: string, action: string, props: DropsPro
 }
 */
 
-// Adapted from [HandyDandyNotebook](https://github.com/WesCook/HandyDandyNotebook/blob/main/src/button.mjs)
-function placeComponentsInTopbar(props: DropsProps, dropStore: any) {
 
-  /* | Button | */
+// Initialize DOM elements and call the appropriate function to place them.
+function initializeComponents(props: DropsProps, dropStore: any) {
+
+  /* || Button || */
 	// Create mod button
 	ui.create(Drops("#pd__T__topbar", props, dropStore, callbackTopbarPinButton), document.body);
 	const pinnedDropsDiv = document.getElementById("pd__topbar-container");
 	const pinnedDropsButton = document.getElementById("pd__topbar-button");
-  
-	// Insert div before the 'potions' icon in the top bar
-	const potionsDiv = document.getElementById("page-header-potions-dropdown").parentNode;
-	const topBarFlexDiv = potionsDiv.parentNode;
-  topBarFlexDiv.insertBefore(pinnedDropsDiv, potionsDiv);
-  
-  /* | Panel | */
+
+  /* || Panel || */
   // Create drops panel (will not show until activated by mod button)
   ui.create(DropsPanel("#pd__T__topbar-panel", props, dropStore, callbackPanelButtons), document.body);
 	const pinnedDropsPanel = document.getElementById("pd__topbar-panel");
   pinnedDropsPanel.classList.toggle('show', false);  // Make sure `show` is initially off for panel
-
   // Append the panel to the parent pinned-drops div
   pinnedDropsDiv.appendChild(pinnedDropsPanel);
 
-  /* | Panel List | */
+  /* || Panel List || */
+  // Create the list element as a child of the panel
   const pinnedDropsPanelItemlist = document.getElementById("pd__topbar-panel-itemlist");
-  ui.create(DropsPanelItem("#pd__T__topbar-panel-item", props, dropStore), pinnedDropsPanelItemlist);
+  ui.create(DropsPanelItem("#pd__T__topbar-panel-item", props, dropStore, callbackPanelItem), pinnedDropsPanelItemlist);
+
+
+  // TODO: Check conditions here (including defaults and settings)
+  //       to determine where the components should be placed.
+
+  // HACK: (TEMPORARY) Force "topbar" mode.
+  placeComponentsInTopbar(props, dropStore, pinnedDropsDiv, true)  // 'init' = true
+
 }
+
+// Adapted from [HandyDandyNotebook](https://github.com/WesCook/HandyDandyNotebook/blob/main/src/button.mjs)
+function placeComponentsInTopbar(props: DropsProps, dropStore: any, pinnedDropsDiv: HTMLElement, init: boolean = false): any {
+  // Define two positions for the top bar pin button, depending on device width:
+  //  - Desktop (≥ 372px): Top-right button row in header, just left of potions button.
+  //  - Mobile  (< 372px): Far left of second header row, opposite to 'cloud save' elements.
+
+  // Note: On creation, the `pinnedDropsDiv` element is appended to `document.body`, and only moved into position
+  //       by a `insertBefore()` call. In any case, `insertBefore()` *moves* the element from one parent to another,
+  //       so no duplicate elements are made when calling this function multiple times.
+
+  // If the 'init' flag is set, add an event listener to watch the width of the window.
+  if (init) {
+    const _debouncedResizeHandler = debounce(placeComponentsInTopbar, 250, { 'leading': true, 'trailing': true });
+    window.addEventListener("resize", () => { _debouncedResizeHandler(props, dropStore, pinnedDropsDiv) });
+  }
+
+  // Desktop
+  if (window.innerWidth >= 372) {
+    // If the button is already in this position, don't try to move it again.
+    if (pinnedDropsDiv.getAttribute('device-mode') == 'desktop') return
+
+    const potionsDiv = document.getElementById("page-header-potions-dropdown").parentNode;
+    const topBarDivForDesktop = potionsDiv.parentNode;
+    topBarDivForDesktop.insertBefore(pinnedDropsDiv, potionsDiv);  // Move `pinnedDropsDiv` to immediate left of potions button
+    pinnedDropsDiv.setAttribute('device-mode', 'desktop')
+  }
+  // Mobile
+  else {
+    // If the button is already in this position, don't try to move it again.
+    if (pinnedDropsDiv.getAttribute('device-mode') == 'mobile') return
+
+    const cloudSaveTimeSpan = document.getElementById("header-cloud-save-time");
+    const topBarDivForMobile = cloudSaveTimeSpan.parentNode;
+    topBarDivForMobile.insertBefore(pinnedDropsDiv, cloudSaveTimeSpan);  // Move `pinnedDropsDiv` to far left of cloud save row
+    pinnedDropsDiv.setAttribute('device-mode', 'mobile')
+  }
+
+}
+
+/* ~~~~ WIP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function placeComponentsInSidebar(props: DropsProps, dropStore: any): any {
+
+	// Add a custom category to the sidebar, just above the Combat section.
+  sidebar.category('Pinned Drops', {
+    name: '',
+    before: 'Combat',  // TODO: Change to insert before/after another section, since "Into The Abyss" section is before Combat when expac is installed.
+    toggleable: true,
+    categoryClass: 'd-none',  // Hide category header label
+  });
+  // Add a button to the sidebar under the new category.
+	sidebar.category('Pinned Drops').item('Pinned Drops', {
+		nameClass: "pinned-drops-sidebar",
+		icon: props.context.getResourceUrl("img/pd-icon-dark.png"),
+		onClick() {
+      // TODO: Replicate button behavior to open panel...
+    },
+	});
+}
+~~~~ WIP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 function captureNotifications(ctx: Modding.ModContext, props: DropsProps, dropStore: any) {
     const allNotifTypes = ['Item', 'Stun', 'BankFull', 'LevelUp', 'Player', 'ItemCharges', 'Mastery', 'Mastery99', 'Preserve', 'Currency', 'TutorialTask', 'SkillXP', 'AbyssalXP', 'AbyssalLevelUp'];
@@ -284,7 +384,7 @@ function captureNotifications(ctx: Modding.ModContext, props: DropsProps, dropSt
       });
 }
 
-//#region Notification Handlers
+//#region Notifs
 function _handleItem(notification: ItemNotify): Notif {
   /* [ Notes ]
    * `args[1]`: Quantity of item received (should always be an integer).
@@ -356,8 +456,75 @@ function _handleIgnore(): Notif {
 //#endregion
 
 
+/* ~~~~ WIP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+export function placeNotebookButton(cb, newValue) {
+  cleanupUI();
+
+  // Get notebook button position
+  let buttonPosition;
+  if (newValue) { // If receiving update from settings change callback
+    buttonPosition = newValue;
+  } else { // Otherwise fall back to saved value
+    const ctx = mod.getContext(import.meta);
+    const sectionInterface = ctx.settings.section("Interface");
+    buttonPosition = sectionInterface.get("button-position");
+  }
+
+  switch (buttonPosition) {
+    case "topbar": placeButtonInTopbar(cb); break;
+    case "minibar": placeButtonInMinibar(cb); break;
+    case "sidebar": placeButtonInSidebar(cb); break;
+    default: console.error("Invalid notebook button position"); break;
+  }
+}
+
+// Remove old buttons, tooltips, and sidebar entries
+function cleanupUI() {
+const notebook = document.getElementById("notebook");
+
+// Destroy tooltip if it exists
+if (notebook && notebook._tippy) {
+  notebook._tippy.destroy();
+}
+
+// Delete node
+if (notebook) {
+  notebook.remove();
+}
+
+// Remove sidebar entry if it exists
+sidebar.category("").item("Handy Dandy Notebook").remove();
+}
+
+~~~~ WIP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+
+//#region Settings
 function createSettings(ctx: Modding.ModContext, dropStore: any) {
-	//const sectionPinButton = ctx.settings.section("Pin Button");
+
+  /**** General ****/
+	const sectionGeneral = ctx.settings.section("General");
+
+  /* ~~~~ WIP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  // [Dropdown] Pin button position
+  sectionGeneral.add({
+		type: "dropdown",
+		name: "pin-button-position",
+		label: "Pin Button Position",
+    hint: "Where notebook button is placed in interface.",
+    options: [
+      { value: "topbar", display: "Top Bar" },
+      { value: "sidebar", display: "Sidebar" },
+    ],
+    default: "topbar",
+		onChange: (newValue: string) => {
+      Button.placeNotebookButton(openNotebook, newValue);
+		},
+	});
+  ~~~~ WIP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+  /**** Panel ****/
 	const sectionPanel = ctx.settings.section("Panel");
 
   // [Dropdown] Panel sorting options

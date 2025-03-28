@@ -14,11 +14,16 @@ export interface Notif {
   qtyText: string;          // `numberWithCommas(qty)`
 }
 
+// Generic type for extra params returned to event handlers, as an object (dict) with arbitrary string keys.
+export interface ExtraParams {
+  [key: string]: any;
+}
+
 export type MouseEventHandler = {
-  (event: PointerEvent|MouseEvent, action?: string): void;
+  (event: PointerEvent|MouseEvent, action: string, extraParams?: ExtraParams): void;
 };
 export type MouseEventCallback = {
-  (eventType: string, action: string, props: DropsProps, store: any): void;
+  (eventType: string, action: string, props: DropsProps, store: any, extraParams?: ExtraParams): void;
 };
 
 export interface DropsProps {
@@ -47,6 +52,7 @@ interface DropsPanel{
 interface DropsPanelItem{
   props: DropsProps;
   store: any;
+  clickPanelItem: MouseEventHandler;
   process: {(dropCounts: Notif[]): Notif[]};
 }
 
@@ -91,11 +97,16 @@ export function DropsPanel(template: string, props: DropsProps, store: any, call
   }
 }
 
-export function DropsPanelItem(template: string, props: DropsProps, store: any): Component<DropsPanelItem> {
+export function DropsPanelItem(template: string, props: DropsProps, store: any, callback: MouseEventCallback): Component<DropsPanelItem> {
   return {
     $template: template,
     props,
     store,
+
+    // Handle clicks on panel items (e.g. delete button)
+    clickPanelItem(event, action, extraParams) {
+      callback(event.type, action, props, store, extraParams);
+    },
 
     // Handle sorting and filtering
     process(dropCounts) {

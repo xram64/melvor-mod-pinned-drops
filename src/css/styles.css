@@ -9,7 +9,7 @@
 
   /* Dimensions */
   --pd-btn_width: 36px;
-  --pd-panel_min-width: 275px;
+  --pd-panel_min-width: 280px;
 }
 
 .pinned-drops.dropdown-menu {
@@ -33,22 +33,47 @@
 }
 .pinned-drops.panel-itemlist {
   list-style: none;
-  padding-left: 0.75rem;
+  padding-left: 0rem;  /* Overrides .dropdown-menu */
   font-size: 0.8rem;
   max-height: 65vh;
   /* line-height: 1.4; */
 }
 .pinned-drops.panel-item {
   text-align: left;
-  /* Allow text to grow panel width, up to a limit. */
-  width: max-content;
-  max-width: 350px;
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  line-height: 1.4;
+  padding: 0.085rem 0.2rem 0rem 0.4rem;
 }
-.pinned-drops.panel-item img {
+.pinned-drops.panel-item:hover {
+  background-color: #ffffff08;
+  outline: solid;
+  outline-width: 1px;
+  outline-color: #ffffff38;
+}
+.pinned-drops.panel-item-wrapper {
+  display: inline;
+  flex: auto;
+}
+.pinned-drops.panel-item-wrapper img {
   height: 14px;
-  margin: 0.1rem 0.4rem;
+  margin: 0.1rem 0.4rem 0.1rem 0rem;
   vertical-align: top;
 }
+.pinned-drops.panel-item-delete {
+  visibility: hidden;
+  margin: 0rem 0.1rem 0rem 0.2rem;
+  font-size: 1.3rem;
+  line-height: 0.9rem;
+  cursor: pointer;
+}
+
+.pinned-drops.panel-item:hover .panel-item-delete {
+  /* Show 'X' button when its parent (`li` item) is hovered */
+  visibility: visible;
+}
+
 .pinned-drops.panel-dropdown.dropdown-menu {
   max-height: 30vh;
   z-index: 99;
