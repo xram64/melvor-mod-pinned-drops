@@ -61,6 +61,7 @@
       <span class="pinned-drops panel-item-qty font-w700 mr-1" :class="`text-${(drop.qty > 0) ? 'success' : 'danger'}`">{{ drop.qtyText }}</span>
       <img v-if="drop.extraIcon !== undefined" :src="drop.extraIcon" style="margin-left: 0.2rem !important; margin-right: 0.2rem !important;">
       <span class="pinned-drops panel-item-text">{{ drop.label }}</span>
+      <span class="pinned-drops panel-item-drops-hr" v-if="drop.dropsPerHour">{{ drop.dropsPerHour }} / hr</span>
     </div>
     <!-- Delete button -->
     <div class="pinned-drops panel-item-delete text-danger" @click="clickPanelItem(event, 'delete', { id: drop.id })">&times;</div>
