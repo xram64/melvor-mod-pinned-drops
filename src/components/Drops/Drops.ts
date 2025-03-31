@@ -12,6 +12,7 @@ export interface Notif {
   extraIcon?: string;       // Optional extra icon file (e.g. Mastery icon)
   qty: number;              // `notification.args[1]`
   qtyText: string;          // `numberWithCommas(qty)`
+  dropsPerHour?: string;
 }
 
 // Generic type for extra params returned to event handlers, as an object (dict) with arbitrary string keys.
@@ -33,6 +34,7 @@ export interface DropsProps {
   capturePaused: boolean;
   readonly dropdownOptions: object;   // TODO: [Dropdown View Menu]
   dropdownOptionActive: string;       // TODO: [Dropdown View Menu]
+  startTime: number;
 }
 
 interface Drops {
@@ -108,9 +110,23 @@ export function DropsPanelItem(template: string, props: DropsProps, store: any, 
       callback(event.type, action, props, store, extraParams);
     },
 
-    // Handle sorting and filtering
+    // Handle sorting, filtering and adding drop counts per hour
     process(dropCounts) {
       let panelSettings = props.context.settings.section('Panel');
+
+      if (panelSettings.get('show-drops-per-hour')) {
+        const elapsedTimeInHours = (Date.now() - props.startTime) / (1000 * 60 * 60);
+
+        dropCounts.forEach((drop) => {
+          const formatter = new Intl.NumberFormat("en-US", {
+            notation: "compact",
+            compactDisplay: "short",
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 1,
+          });
+          drop.dropsPerHour = formatter.format(drop.qty / elapsedTimeInHours);
+        })
+      }
 
       let sortRule;
       switch (panelSettings.get('panel-sorting')) {

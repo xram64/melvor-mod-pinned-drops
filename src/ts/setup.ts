@@ -28,6 +28,7 @@ export async function setup(ctx: Modding.ModContext) {
     capturePaused: false,
     dropdownOptions: {'session': 'Session', 'window': 'Window'},  // TODO: [Dropdown View Menu]
     dropdownOptionActive: 'session',                              // TODO: [Dropdown View Menu]
+    startTime: Date.now()
   };
 
   // Create a store to hold running counts for all drops, shared between components.
@@ -179,6 +180,7 @@ function callbackPanelButtons(eventType: string, action: string, props: DropsPro
       // Reset button
       case 'reset':
         store.clearAllDrops();
+        props.startTime = Date.now();
         break;
       default:
         console.error(`[${props.label}] Unknown button name '${action}'`);
@@ -568,6 +570,17 @@ function createSettings(ctx: Modding.ModContext, dropStore: any) {
 		label: "Show Decimal XP Gains?",
 		hint: "Raw skill XP gains are often decimal numbers which are rounded before being displayed in-game.",
 		default: false,
+    onChange: (newValue: boolean) => {
+      // FIX: This change is not immediate and will only apply when XP is added (`forceRefresh` doesn't work).
+    },
+	});
+
+	sectionPanel.add({
+    type: "switch",
+		name: "show-drops-per-hour",
+		label: "Show Average Drops / hour",
+		hint: "Append a display of average drops per hour.",
+		default: true,
     onChange: (newValue: boolean) => {
       // FIX: This change is not immediate and will only apply when XP is added (`forceRefresh` doesn't work).
     },

@@ -74,6 +74,10 @@
   visibility: visible;
 }
 
+.pinned-drops.panel-item-drops-hr {
+  float: right;
+}
+
 .pinned-drops.panel-dropdown.dropdown-menu {
   max-height: 30vh;
   z-index: 99;
